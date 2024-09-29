@@ -546,7 +546,7 @@ function app.wakeupUI()
                         if rfsuite.config.activeProfile ~= nil and rfsuite.config.activeProfileLast ~= nil then
                         
                                 if app.Page.refreshOnProfileChange == true then
-                                        if rfsuite.config.activeProfile ~= rfsuite.config.activeProfileLast then
+                                        if rfsuite.config.activeProfile ~= rfsuite.config.activeProfileLast and rfsuite.config.activeProfileLast ~= nil then
                                                 if app.ui.progressDisplay() then
                                                         -- switch has been toggled mid flow - this is bad.. clean upd
                                                         form.clear()
@@ -565,7 +565,7 @@ function app.wakeupUI()
                         if rfsuite.config.activeRateProfile ~= nil and rfsuite.config.activeRateProfileLast ~= nil then
                         
                                 if app.Page.refreshOnRateChange == true then
-                                        if rfsuite.config.activeRateProfile ~= rfsuite.config.activeRateProfileLast then
+                                        if rfsuite.config.activeRateProfile ~= rfsuite.config.activeRateProfileLast and rfsuite.config.activeRateProfileLast ~= nil then
                                                 if app.ui.progressDisplay() then
                                                         -- switch has been toggled mid flow - this is bad.. clean upd
                                                         form.clear()

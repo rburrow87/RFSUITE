@@ -11,7 +11,6 @@ function utils.getCurrentProfile()
             and (rfsuite.app.sensors.rateCRSF ~= nil and rfsuite.app.sensors.rateCRSF:state() == true) 
             then
                 -- crsf call for data              
-                 
                 rfsuite.config.activeProfileLast = rfsuite.config.activeProfile
                 rfsuite.config.activeProfile = math.floor(rfsuite.app.sensors.profileCRSF:value())
                 
@@ -21,8 +20,8 @@ function utils.getCurrentProfile()
         elseif (rfsuite.app.sensors ~= nil)
             and (rfsuite.app.sensors.profileSPORT ~= nil and rfsuite.app.sensors.profileSPORT:state() == true) 
             and (rfsuite.app.sensors.rateSPORT ~= nil and rfsuite.app.sensors.rateSPORT:state() == true) 
-            then
-                -- sport call for data              
+            then       
+                -- call sport sensor data
                  
                 rfsuite.config.activeProfileLast = rfsuite.config.activeProfile
                 rfsuite.config.activeProfile = math.floor(rfsuite.app.sensors.profileSPORT:value())
@@ -32,6 +31,7 @@ function utils.getCurrentProfile()
     
         else
                 -- msp call to get data
+                print("MSP Sensor - Switch Profile")
 
                 local message = {
                         command = 101, -- MSP_SERVO_CONFIGURATIONS
