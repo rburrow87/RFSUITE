@@ -47,7 +47,7 @@ function rf2gov.getSensors()
     else
         if system.getSource("Rx RSSI1") ~= nil then
             -- we are running crsf
-            local crsfSOURCE = system.getSource("Vbat")
+            local crsfSOURCE = system.getSource("*Cnt")
             if crsfSOURCE ~= nil then
                 -- crsf passthru
                 govId = system.getSource("Gov"):value()

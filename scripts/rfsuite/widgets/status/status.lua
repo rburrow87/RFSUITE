@@ -2707,7 +2707,7 @@ function status.getSensors()
             -- we are running crsf
             -- print("CRSF")
             if  crsfSOURCE == nil then
-                crsfSOURCE = system.getSource("Vbat")
+                crsfSOURCE = system.getSource("*Cnt")
             end
 
             if crsfSOURCE ~= nil then
