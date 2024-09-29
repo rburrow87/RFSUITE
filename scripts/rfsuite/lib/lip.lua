@@ -121,7 +121,7 @@ function LIP.save(fileName, data)
         file:write(contents);
         io.close(file);
         
-        print(fileName)
+
         rfsuite.utils.log("Saved preferences to: " .. fileName)
         
 end
