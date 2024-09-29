@@ -2,7 +2,7 @@
 
 <img src="https://github.com/robthomson/RFSUITE/blob/main/git/rf2ethos-main.png?raw=true" width="800" alt="MAIN PAGE">
 
-RFSUITE is a widget that has been designed to run on Frsky Radios. The system tool allows you to manage almost all aspects of your Rotorflight FBL.  
+RFSUITE is an amalgimation of multiple widgets and tools for RotorFlight on ethos.  It is the one stop shop for everything to do with Rotorflight on Ethos.
 
 Fully supported is:
 
