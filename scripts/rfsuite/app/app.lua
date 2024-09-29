@@ -793,7 +793,7 @@ function app.wakeupUI()
 
                         if app.triggers.badMspVersionDisplay == false then
                                 local message
-                                if rfsuite.bg.msp.backgroundMsp ~= true then
+                                if not rfsuite.bg.msp or rfsuite.bg.msp.backgroundMsp ~= true then
                                    message = "Please enable the background task."
                                 elseif app.getRSSI() == 0 then
                                         message = "Unable to establish a link to the flight controller"
