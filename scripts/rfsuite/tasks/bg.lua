@@ -9,6 +9,8 @@ local compile = arg[2]
 local bg = {}
 bg.init = true
 
+local initTime
+
 function bg.wakeup()
 
         -- tasks dont have a create function
@@ -24,12 +26,19 @@ function bg.wakeup()
                 bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
         end
 
+        if rfsuite.rssiSensor == nil then
+                initTime = os.clock()
+        end
 
         -- high priority tasks
         bg.msp.wakeup()
         bg.sensors.wakeup()
-        bg.clocksync.wakeup()
-        bg.adjfunctions.wakeup()        
+        
+        -- we only want these to kick in maybe 5s after connection has come up. this allows things to stabilize
+        if (os.clock() - initTime) > 5 then
+                bg.clocksync.wakeup()
+                bg.adjfunctions.wakeup()
+        end
 
 
 end
