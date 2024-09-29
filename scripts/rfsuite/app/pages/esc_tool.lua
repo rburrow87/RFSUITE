@@ -225,7 +225,7 @@ local function wakeup()
 
                 for i, v in ipairs(rfsuite.app.formFields) do rfsuite.app.formFields[i]:enable(true) end
 
-                if ESC.powerCycle == true and showPowerCycleLoader == true then
+                if ESC and ESC.powerCycle == true and showPowerCycleLoader == true then
                         powercycleLoader:close()
                         powercycleLoaderCounter = 0
                         showPowerCycleLoaderInProgress = false
@@ -244,9 +244,9 @@ local function wakeup()
                 rfsuite.app.dialogs.progressDisplay = false
                 rfsuite.app.triggers.isReady = true
 
-                if ESC.powerCycle ~= true then modelText = form.addStaticText(modelLine, modelTextPos, "UNKNOWN") end
+                if ESC and ESC.powerCycle ~= true then modelText = form.addStaticText(modelLine, modelTextPos, "UNKNOWN") end
 
-                if ESC.powerCycle == true then showPowerCycleLoader = true end
+                if ESC and ESC.powerCycle == true then showPowerCycleLoader = true end
 
         end
 
