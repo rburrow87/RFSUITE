@@ -174,7 +174,9 @@ function adjfunc.wakeup()
                                         end
                                         if adjfunc.adjfuncValueChanged == true  or adjfunc.adjfuncIdChanged == true then
        
-                                                system.playNumber(adjfunc.adjValue)
+                                                if adjfunc.adjValue ~= nil then
+                                                        system.playNumber(adjfunc.adjValue)
+                                                end
                                                 
                                                 adjfunc.adjfuncValueChanged = false
                                                 

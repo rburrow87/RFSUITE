@@ -31,7 +31,7 @@ function utils.getCurrentProfile()
     
         else
                 -- msp call to get data
-                print("MSP Sensor - Switch Profile")
+
 
                 local message = {
                         command = 101, -- MSP_SERVO_CONFIGURATIONS

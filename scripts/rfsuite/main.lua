@@ -4,7 +4,7 @@ local config = {}
 -- LuaFormatter off
 config.toolName = "ROTORFLIGHT"                                         -- name of the tool
 config.suiteDir = "/scripts/rfsuite/"                                -- base path the script is installed into
-config.Version = "1.0.0"                                            -- version number of this software release
+config.Version = "0.0.1"                                            -- version number of this software release
 config.logEnable = false                                            -- will log to: /scripts/rfsuite/rfsuite.log
 config.logEnableScreen = false                                      -- if config.logEnable is true then also print to screen
 config.mspTxRxDebug = false                                         -- simple print of full msp payload that is sent and received

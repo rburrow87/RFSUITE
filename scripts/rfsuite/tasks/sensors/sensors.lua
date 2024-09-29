@@ -18,14 +18,18 @@ function sensors.wakeup()
         
         -- quick kill if not using crsf as this script
         -- is only for crsf code
-        if rfsuite.bg.msp.protocol.mspProtocol == "crsf" and rfsuite.rssiSensor then
-                sensors.elrs.wakeup()
+        if rfsuite.rssiSensor == nil then
+                sensors.sport.sensors = {}
+        else        
+        
+                if rfsuite.bg.msp.protocol.mspProtocol == "crsf" and rfsuite.rssiSensor then
+                        sensors.elrs.wakeup()
+                end
+
+                if rfsuite.bg.msp.protocol.mspProtocol == "smartPort" and rfsuite.rssiSensor  then
+                        sensors.sport.wakeup()
+                end        
         end
-
-        if rfsuite.bg.msp.protocol.mspProtocol == "smartPort" and rfsuite.rssiSensor  then
-                sensors.sport.wakeup()
-        end        
-
        
 end
 
