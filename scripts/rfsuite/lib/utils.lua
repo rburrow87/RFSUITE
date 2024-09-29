@@ -67,7 +67,7 @@ end
 
 function utils.getRssiSensor()
         local rssiSensor
-        local rssiNames = {"RSSI", "RSSI 2.4G", "RSSI 900M", "Rx RSSI1", "Rx RSSI2", "RSSI Int", "RSSI Ext"}
+        local rssiNames = {"RSSI", "RSSI 2.4G", "RSSI 900M", "Rx RSSI1", "Rx RSSI2", "RSSI Int", "RSSI Ext","RSSI Lora"}
         for i, name in ipairs(rssiNames) do
                 rssiSensor = system.getSource(name)
                 if rssiSensor then return rssiSensor end
