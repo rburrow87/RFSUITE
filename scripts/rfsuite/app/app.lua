@@ -988,7 +988,7 @@ end
 function app.create()
 
         app.ini = assert(loadfile(rfsuite.config.suiteDir .. "lib/lip.lua"))()        
-        app.preferences = app.ini.load(rfsuite.config.suiteDir .. "app/preferences.ini");   
+        app.preferences = app.ini.load(rfsuite.config.suiteDir .. "preferences.ini");   
 
         -- load msp timeout
         rfsuite.config.watchdogParam = app.preferences.advanced.watchdog

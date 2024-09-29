@@ -60,7 +60,7 @@ local function openPage(idx, title, script)
         end, function(newValue)
                 rfsuite.config.audioParam = newValue
                 rfsuite.app.preferences.interface.audio = newValue
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
         rfsuite.config.iconsizeParam = rfsuite.app.preferences.interface.iconSize
@@ -72,7 +72,7 @@ local function openPage(idx, title, script)
         end, function(newValue)
                 rfsuite.config.iconsizeParam = newValue
                 rfsuite.app.preferences.interface.iconSize = newValue
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
         -- PROFILE
@@ -85,7 +85,7 @@ local function openPage(idx, title, script)
         end, function(newValue)
                 rfsuite.config.profileswitchParam = newValue
                 rfsuite.app.preferences.interface.profileSwitch = newValue
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
 
@@ -101,7 +101,7 @@ local function openPage(idx, title, script)
         end, function(newValue)
                 rfsuite.config.watchdogParam = newValue
                 rfsuite.app.preferences.advanced.watchdog = newValue
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
         -- COMPILATION
@@ -113,7 +113,7 @@ local function openPage(idx, title, script)
         end, function(newValue)
                 rfsuite.config.compilationParam = newValue
                 rfsuite.app.preferences.advanced.compilation = newValue
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
 
                 if newValue == 2 then
                         rfsuite.app.formFields[6]:enable(true)
@@ -138,7 +138,7 @@ local function openPage(idx, title, script)
                 local member = rfsuite.config.compilationswitchParam:member()
                 local category = rfsuite.config.compilationswitchParam:category()
                 rfsuite.app.preferences.advanced.compilationSwitch = category .. "," .. member                 
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
         if tonumber(rfsuite.config.compilationParam) == 2 then
@@ -162,7 +162,7 @@ local function openPage(idx, title, script)
                 local member = rfsuite.config.demoswitchParam:member()
                 local category = rfsuite.config.demoswitchParam:category()
                 rfsuite.app.preferences.advanced.demoSwitch = category .. "," .. member                 
-                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'app/preferences.ini',rfsuite.app.preferences)
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
         postLoad()

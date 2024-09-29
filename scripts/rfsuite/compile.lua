@@ -33,7 +33,7 @@ end
 
 
 local INI = assert(loadfile(config.suiteDir .. "lib/lip.lua"))(config)        
-local preferences = INI.load(config.suiteDir .. "app/preferences.ini");
+local preferences = INI.load(config.suiteDir .. "preferences.ini");
 
 -- explode a string
 local function explode(inputstr, sep)
