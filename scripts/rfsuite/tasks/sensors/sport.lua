@@ -22,7 +22,6 @@ local sensors = {}
 function sport.wakeup()
     
     -- check for custom sensors and create them if they dont exist
-
     for x,v in pairs(customSensors) do
 
 
@@ -39,6 +38,12 @@ function sport.wakeup()
 
 
     end
+    
+    -- flush sensor list if we kill the sensors
+    if not rfsuite.rssiSensor then
+          sensors = {}
+    end
+    
 
 end
 
