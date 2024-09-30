@@ -88,6 +88,11 @@ adjfunc.adjFunctionsTable = {
         id61 = {name = "Cross Coup Gain", wavs = {"crossc", "gain"}},
         id62 = {name = "Cross Coup Ratio", wavs = {"crossc", "ratio"}},
         id63 = {name = "Cross Coup Cutoff", wavs = {"crossc", "cutoff"}}
+
+        -- accelerometer
+        id64 = { name = "Accelerometer Pitch Trim", wavs = { "acc", "pitch", "trim" } },
+        id65 = { name = "Accelerometer Roll Trim", wavs = { "acc", "roll", "trim" } },
+        
 }
 adjfunc.adjValueSrc = nil
 adjfunc.adjFunctionSrc = nil
