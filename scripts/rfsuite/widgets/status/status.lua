@@ -928,7 +928,7 @@ end
 
 function status.getRSSI()
     if environment.simulation == true then return 100 end
-    if status.rssiSensor ~= nil and status.rssiSensor:state() then return status.rssiSensor:value() end
+    if status.rssiSensor ~= nil and rfsuite.bg.telemetry and rfsuite.bg.telemetry.active() then return status.rssiSensor:value() end
     return 0
 end
 

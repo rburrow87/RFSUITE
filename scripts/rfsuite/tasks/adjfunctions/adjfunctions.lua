@@ -106,7 +106,7 @@ function adjfunc.wakeup()
                 return
         end
 
-        if (os.clock() - initTime) < 5 or rfsuite.rssiSensor:state() == false then
+        if (os.clock() - initTime) < 5 or rfsuite.bg.telemetry.active() == false then
                 return
         end
         

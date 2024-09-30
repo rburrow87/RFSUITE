@@ -181,7 +181,7 @@ function msp.wakeup()
                 msp.onConnectChecksInit = true         
         end  
         
-        if rfsuite.rssiSensor ~= nil and rfsuite.rssiSensor:state() == false then
+        if rfsuite.rssiSensor ~= nil and rfsuite.bg.telemetry.active() == false then
                 msp.resetState()
                 msp.onConnectChecksInit = true 
         end
