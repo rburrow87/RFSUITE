@@ -130,10 +130,12 @@ function adjfunc.wakeup()
       
         end
         
-        if adjfunc.adjValueSrc ~= nil then
+        if adjfunc.adjValueSrc ~= nil and adjfunc.adjFunctionSrc ~= nil then
         
+           
            adjfunc.adjValue = adjfunc.adjValueSrc:value()
            adjfunc.adjFunction = adjfunc.adjFunctionSrc:value()
+
            
            if adjfunc.adjValue ~= nil then
                         adjfunc.adjValue = math.floor(adjfunc.adjValue)
