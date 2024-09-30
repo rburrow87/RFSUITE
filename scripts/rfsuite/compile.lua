@@ -89,15 +89,20 @@ function compile.loadScript(script)
         if config.useCompiler == true then
                 if file_exists(cachefile) ~= true then
                         system.compile(script)
+
                         os.rename(script .. 'c', cachefile)
+                        
+                        -- if not compiled - we compile; but return non compiled to sort timing issue.
+                         print("Loading: " .. cachefile)
+                        return assert(loadfile(cachefile))
                 end
                 -- print("Loading: " .. cachefile)
-                collectgarbage()
                 return assert(loadfile(cachefile))
         else
-                if file_exists(cachefile) == true then os.remove(cachefile) end
-                -- print("Loading: " .. script)
-                collectgarbage()                
+                if file_exists(cachefile) == true then 
+                        os.remove(cachefile) 
+                end
+                -- print("Loading: " .. script)              
                 return assert(loadfile(script))
         end
 
