@@ -4,6 +4,7 @@ local config = arg[1]
 local compile = arg[2]
 
 local adjfunc = {}
+local firstRun = true
 
 local initTime = os.clock()
 
@@ -165,7 +166,7 @@ function adjfunc.wakeup()
 
                                                 local tgt = "id" .. tostring(adjfunc.adjFunction)
                                                 local adjfunction = adjfunc.adjFunctionsTable[tgt]                                 
-                                                if adjfunction ~= nil then
+                                                if adjfunction ~= nil and firstRun == false then
                                                         for wavi, wavv in ipairs(adjfunction.wavs) do
                                                                 system.playFile(rfsuite.config.suiteDir .. "tasks/adjfunctions/sounds/" .. wavv .. ".wav")
                                                         end
@@ -174,13 +175,13 @@ function adjfunc.wakeup()
                                         end
                                         if adjfunc.adjfuncValueChanged == true  or adjfunc.adjfuncIdChanged == true then
        
-                                                if adjfunc.adjValue ~= nil then
+                                                if adjfunc.adjValue ~= nil and firstRun == false then
                                                         system.playNumber(adjfunc.adjValue)
                                                 end
                                                 
                                                 adjfunc.adjfuncValueChanged = false
                                                 
-
+                                                firstRun = false
                                         end
                                         adjfunc.adjTimer = os.clock()
                                 end

@@ -9,8 +9,6 @@ local compile = arg[2]
 local bg = {}
 bg.init = true
 
-local initTime
-
 
 
 function bg.wakeup()
@@ -27,24 +25,14 @@ function bg.wakeup()
                 bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
         end
 
-        if rfsuite.rssiSensor == nil then
-                initTime = os.clock()
-        end
-
-        
-
         -- high priority and must alway run regardless of tlm state
         bg.msp.wakeup()
         
         if bg.telemetry.active() then
-
-                -- high priority tasks        
+        
                 bg.sensors.wakeup()
-                
-                -- we only want these to kick in maybe 5s after connection has come up. this allows things to stabilize
-                if (os.clock() - initTime) > 5 then
-                        bg.adjfunctions.wakeup()
-                end
+                bg.adjfunctions.wakeup()
+
         end
 
 end
