@@ -6,8 +6,8 @@ local compile = arg[2]
 
 local sensors = {}
 
-sensors.elrs = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/elrs.lua"))(config,compile)
-sensors.sport = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sport.lua"))(config,compile)
+sensors.elrs = assert(loadfile(config.suiteDir .. "tasks/sensors/elrs.lua"))(config,compile)
+sensors.sport = assert(loadfile(config.suiteDir .. "tasks/sensors/sport.lua"))(config,compile)
 
 function sensors.wakeup()
 

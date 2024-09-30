@@ -56,7 +56,7 @@ local function openPage(pidx, title, script)
 
         local folder = title
 
-        ESC = assert(compile.loadScript(rfsuite.config.suiteDir .. "app/pages/esc/" .. folder .. "/init.lua"))()
+        ESC = assert(loadfile(rfsuite.config.suiteDir .. "app/pages/esc/" .. folder .. "/init.lua"))()
 
         mspSignature = ESC.mspSignature
         mspHeaderBytes = ESC.mspHeaderBytes
@@ -110,7 +110,7 @@ local function openPage(pidx, title, script)
         })
         rfsuite.app.formNavigationFields['menu']:focus()
 
-        ESC.pages = assert(compile.loadScript(rfsuite.config.suiteDir .. "app/pages/esc/" .. folder .. "/pages.lua"))()
+        ESC.pages = assert(loadfile(rfsuite.config.suiteDir .. "app/pages/esc/" .. folder .. "/pages.lua"))()
 
         modelLine = form.addLine("")
         modelText = form.addStaticText(modelLine, modelTextPos, "")

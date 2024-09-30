@@ -131,7 +131,7 @@ end
 
 function ui.openMainMenu()
 
-        local MainMenu = assert(compile.loadScript(config.suiteDir .. "app/pages.lua"))()
+        local MainMenu = assert(loadfile(config.suiteDir .. "app/pages.lua"))()
 
         if tonumber(rfsuite.utils.makeNumber(config.environment.major .. config.environment.minor .. config.environment.revision)) < config.ethosVersion then return end
 
@@ -586,7 +586,7 @@ end
 function ui.openPageRefresh(idx, title, script, extra1, extra2, extra3, extra5, extra5)
 
         rfsuite.app.triggers.isReady = false
-        rfsuite.app.Page = assert(compile.loadScript(config.suiteDir .. "app/pages/" .. script))()
+        rfsuite.app.Page = assert(loadfile(config.suiteDir .. "app/pages/" .. script))()
 
 end
 
@@ -597,7 +597,7 @@ function ui.openPage(idx, title, script, extra1, extra2, extra3, extra5, extra5)
         rfsuite.app.formFields = {}
         rfsuite.app.formLines = {}
 
-        rfsuite.app.Page = assert(compile.loadScript(config.suiteDir .. "app/pages/" .. script))()
+        rfsuite.app.Page = assert(loadfile(config.suiteDir .. "app/pages/" .. script))()
 
 
         if rfsuite.app.Page.openPage then
@@ -777,7 +777,7 @@ function ui.navigationButtons(x, y, w, h)
         -- HELP BUTTON
         if navButtons.help ~= nil and navButtons.help == true then
 
-                local help = assert(compile.loadScript(config.suiteDir .. "app/help/pages.lua"))()
+                local help = assert(loadfile(config.suiteDir .. "app/help/pages.lua"))()
                 local section = string.gsub(rfsuite.app.lastScript, ".lua", "") -- remove .lua
 
                 rfsuite.app.formNavigationFields['help'] = form.addButton(line, {x = helpOffset, y = y, w = wS, h = h}, {
