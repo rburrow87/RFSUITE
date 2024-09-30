@@ -32,6 +32,7 @@ function bg.wakeup()
         
                 bg.sensors.wakeup()
                 bg.adjfunctions.wakeup()
+                bg.telemetry.wakeup()
 
         end
 

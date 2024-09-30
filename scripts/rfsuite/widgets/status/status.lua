@@ -2712,41 +2712,20 @@ function status.getSensors()
 
             if crsfSOURCE ~= nil then
                 -- crsf passthru
-                
-                if voltageSOURCE == nil then
-                        voltageSOURCE = system.getSource("Vbat")
-                end
-                if rpmSOURCE == nil then
-                        rpmSOURCE = system.getSource("Hspd")
-                end   
-                if currentSOURCE == nil then
-                        currentSOURCE = system.getSource("Curr")
-                end        
-                if temp_escSOURCE == nil then
-                        temp_escSOURCE = system.getSource("Tesc")
-                end    
-                if  temp_mcuSOURCE == nil then
-                        temp_mcuSOURCE = system.getSource("Tmcu")
-                end
-                if fuelSOURCE == nil then       
-                        fuelSOURCE = system.getSource("Bat%")
-                end  
-                if mahSOURCE == nil then
-                        mahSOURCE = system.getSource("Capa")
-                end
-                if govSOURCE == nil then
-                        govSOURCE = system.getSource("Gov")
-                end      
-                if rssiSOURCE == nil then
-                        rssiSOURCE = system.getSource("Rx Quality")
-                end  
-                if adjfSOURCE == nil then       
-                        adjfSOURCE = system.getSource("AdjF")
-                end 
-                if adjvSOURCE == nil then
-                        adjvSOURCE = system.getSource("AdjV")
-                end        
+                -- LEGACY CRSF REUSE
+                voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
+                rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
+                currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
+                temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
+                temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
+                fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
+                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
+                adjfSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
+                adjvSOURCE = rfsuite.bg.telemetry.getSensorSource("adjV")
+                mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
+                rssiSOURCE = rfsuite.bg.telemetry.getSensorSource("rssi")
 
+      
                 if voltageSOURCE ~= nil then
                     voltage = voltageSOURCE:value()
                     if voltage ~= nil then
@@ -2900,34 +2879,21 @@ function status.getSensors()
                 end
 
             else
+                
+            
                 -- LEGACY CRSF REUSE
-                if voltageSOURCE == nil then
-                        voltageSOURCE = system.getSource("Rx Batt")
-                end   
-                if rpmSOURCE == nil then
-                        rpmSOURCE = system.getSource("GPS Alt")
-                end    
-                if currentSOURCE == nil then
-                        currentSOURCE = system.getSource("Rx Curr")
-                end
-                if temp_escSOURCE == nil then
-                        temp_escSOURCE = system.getSource("GPS Speed")
-                end   
-                if temp_mcuSOURCE == nil then       
-                        temp_mcuSOURCE = system.getSource("GPS Sats")
-                end        
-                if fuelSOURCE == nil then
-                        fuelSOURCE = system.getSource("Rx Batt%")
-                end   
-                if mahSOURCE == nil then
-                        mahSOURCE = system.getSource("Rx Cons")
-                end     
-                if govSOURCE == nil then
-                        govSOURCE = system.getSource("Flight mode")
-                end
-                if rssiSOURCE == nil then
-                        rssiSOURCE = system.getSource("Rx Quality")
-                end        
+                voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
+                rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
+                currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
+                temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
+                temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
+                fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
+                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
+                adjSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
+                adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
+                mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
+                rssiSOURCE = rfsuite.bg.telemetry.getSensorSource("rssi")
+   
 
                 if voltageSOURCE ~= nil then
                     voltage = voltageSOURCE:value()
@@ -3038,38 +3004,17 @@ function status.getSensors()
             -- we are run sport    
             -- set sources for everthing below
             -- print("SPORT")
-
-            if voltageSOURCE == nil then
-                voltageSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0210})
-            end
-            if rpmSOURCE == nil then
-                rpmSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0500})
-            end
-            if currentSOURCE == nil then
-                currentSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0200})
-            end    
-            if temp_escSOURCE == nil then
-                temp_escSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0B70})
-            end    
-            if temp_mcuSOURCE == nil then
-                temp_mcuSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0401})
-            end    
-            if fuelSOURCE == nil then
-                fuelSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0600})
-            end 
-            if govSOURCE == nil then
-                govSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5450})
-            end    
-            if adjSOURCE == nil then
-                adjSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5110})
-            end
-            if adjVALUE == nil then
-                adjVALUE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5111})
-            end    
-            if mahSOURCE == nil then
-                mahSOURCE = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5250})
-            end
-
+            voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
+            rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
+            currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
+            temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
+            temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
+            fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
+            govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
+            adjSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
+            adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
+            mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
+    
             -- voltageSOURCE = system.getSource("VFAS")
             if voltageSOURCE ~= nil then
                 voltage = voltageSOURCE:value()
