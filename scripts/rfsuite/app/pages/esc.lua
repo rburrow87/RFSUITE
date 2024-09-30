@@ -91,7 +91,7 @@ local function openPage(pidx, title, script)
                 numPerRow = rfsuite.app.radio.buttonsPerRow
         end
 
-        local ESCMenu = assert(loadfile(rfsuite.config.suiteDir .. "app/pages/" .. script))()
+        local ESCMenu = assert(compile.loadScript(rfsuite.config.suiteDir .. "app/pages/" .. script))()
 
         local lc = 0
         local bx = 0

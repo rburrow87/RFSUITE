@@ -19,10 +19,10 @@ function bg.wakeup()
         if bg.init == true then
                 bg.init = false                
                 -- tasks
-                bg.telemetry = assert(loadfile(config.suiteDir .. "tasks/telemetry/telemetry.lua"))(config,compile)
-                bg.msp = assert(loadfile(config.suiteDir .. "tasks/msp/msp.lua"))(config,compile)
-                bg.adjfunctions = assert(loadfile(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
-                bg.sensors = assert(loadfile(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
+                bg.telemetry = assert(compile.loadScript(config.suiteDir .. "tasks/telemetry/telemetry.lua"))(config,compile)
+                bg.msp = assert(compile.loadScript(config.suiteDir .. "tasks/msp/msp.lua"))(config,compile)
+                bg.adjfunctions = assert(compile.loadScript(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
+                bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
         end
 
         -- high priority and must alway run regardless of tlm state

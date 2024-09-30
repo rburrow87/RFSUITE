@@ -13,7 +13,7 @@ msp.backgroundMsp = false
 
 
 local rssiCheckScheduler = os.clock()
-local protocol = assert(loadfile(config.suiteDir .. "tasks/msp/protocols.lua"))()
+local protocol = assert(compile.loadScript(config.suiteDir .. "tasks/msp/protocols.lua"))()
 
 -- BACKGROUND checks
 function msp.onConnectBgChecks()
@@ -145,7 +145,7 @@ function msp.wakeup()
                 -- preload all transport methods
                 msp.protocolTransports = {}
                 for i,v in pairs(protocol.getTransports()) do
-                        msp.protocolTransports[i] = assert(loadfile(config.suiteDir .. v))()
+                        msp.protocolTransports[i] = assert(compile.loadScript(config.suiteDir .. v))()
                 end
          
                 -- set active transport table to use
@@ -156,10 +156,10 @@ function msp.wakeup()
                 msp.protocol.mspPoll = transport.mspPoll
                 
                 
-                msp.mspQueue = assert(loadfile(config.suiteDir .. "tasks/msp/mspQueue.lua"))()
+                msp.mspQueue = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspQueue.lua"))()
                 msp.mspQueue.maxRetries = msp.protocol.maxRetries
-                msp.mspHelper = assert(loadfile(config.suiteDir .. "tasks/msp/mspHelper.lua"))()
-                assert(loadfile(config.suiteDir .. "tasks/msp/common.lua"))()                
+                msp.mspHelper = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspHelper.lua"))()
+                assert(compile.loadScript(config.suiteDir .. "tasks/msp/common.lua"))()                
 
                 msp.init = false
         end 

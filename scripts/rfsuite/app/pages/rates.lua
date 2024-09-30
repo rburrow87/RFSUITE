@@ -14,7 +14,7 @@ tables[5] = rfsuite.config.suiteDir .. "app/pages/ratetables/quick.lua"
 
 if rfsuite.RateTable == nil then rfsuite.RateTable = rfsuite.config.defaultRateTable end
 
-local mytable = assert(loadfile(tables[rfsuite.RateTable]))()
+local mytable = assert(compile.loadScript(tables[rfsuite.RateTable]))()
 
 local fields = mytable.fields
 
@@ -46,7 +46,7 @@ end
 
 local function openPage(idx, title, script)
 
-        rfsuite.app.Page = assert(loadfile(rfsuite.config.suiteDir .. "app/pages/" .. script))()
+        rfsuite.app.Page = assert(compile.loadScript(rfsuite.config.suiteDir .. "app/pages/" .. script))()
         collectgarbage()
 
         rfsuite.app.lastIdx = idx

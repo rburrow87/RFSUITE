@@ -104,6 +104,49 @@ local function openPage(idx, title, script)
                 rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
         end)
 
+        -- COMPILATION
+        rfsuite.config.compilationParam = rfsuite.app.preferences.advanced.compilation
+        if rfsuite.config.compilationParam == nil or rfsuite.config.compilationParam == "" then rfsuite.config.compilationParam = 0 end
+        line = advpanel:addLine("Compilation")
+        rfsuite.app.formFields[5] = form.addChoiceField(line, nil, {{"Enable", 0}, {"Disable", 1}, {"Use switch", 2}}, function()
+                return tonumber(rfsuite.config.compilationParam)
+        end, function(newValue)
+                rfsuite.config.compilationParam = newValue
+                rfsuite.app.preferences.advanced.compilation = newValue
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
+
+                if newValue == 2 then
+                        rfsuite.app.formFields[6]:enable(true)
+                else
+                        rfsuite.app.formFields[6]:enable(false)
+                end
+
+        end)
+
+        -- COMPILATION SWITCH
+        rfsuite.config.compilationswitchParamPreference = rfsuite.app.preferences.advanced.compilationSwitch
+        if rfsuite.config.compilationswitchParamPreference ~= nil then
+                local s = rfsuite.utils.explode(rfsuite.config.compilationswitchParamPreference, ",")
+                rfsuite.config.compilationswitchParam = system.getSource({category = s[1], member = s[2]})
+        end
+
+        line = advpanel:addLine("   Switch")
+        rfsuite.app.formFields[6] = form.addSwitchField(line, nil, function()
+                return rfsuite.config.compilationswitchParam
+        end, function(newValue)
+                rfsuite.config.compilationswitchParam = newValue
+                local member = rfsuite.config.compilationswitchParam:member()
+                local category = rfsuite.config.compilationswitchParam:category()
+                rfsuite.app.preferences.advanced.compilationSwitch = category .. "," .. member                 
+                rfsuite.app.ini.save(rfsuite.config.suiteDir .. 'preferences.ini',rfsuite.app.preferences)
+        end)
+
+        if tonumber(rfsuite.config.compilationParam) == 2 then
+                rfsuite.app.formFields[6]:enable(true)
+        else
+                rfsuite.app.formFields[6]:enable(false)
+        end
+
         -- DEMO MODE
         rfsuite.config.demoswitchParamPreference = rfsuite.app.preferences.advanced.demoSwitch
         if rfsuite.config.demoswitchParamPreference ~= nil then
