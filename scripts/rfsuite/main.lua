@@ -18,8 +18,8 @@ config.skipRssiSensorCheck = false                                  -- skip chec
 config.icon = lcd.loadMask(config.suiteDir .. "app/gfx/icon.png")        -- icon
 
 -- tasks
-config.mspTaskName = config.toolName .. " [Background Tasks]"                     -- background task name for msp services etc
-config.mspTaskKey = "rf2bg"                                        -- key id used for msp services
+config.bgTaskName = config.toolName .. " [Background Tasks]"                     -- background task name for msp services etc
+config.bgTaskKey = "rf2bg"                                        -- key id used for msp services
 
 
 -- widgets
@@ -51,7 +51,7 @@ rfsuite.rf2status = assert(compile.loadScript(config.suiteDir .. "widgets/status
 
 local function init()
         system.registerSystemTool({event = rfsuite.app.event, name = config.toolName, icon = config.icon, create = rfsuite.app.create, wakeup = rfsuite.app.wakeup, paint = rfsuite.app.paint, close = rfsuite.app.close})
-        system.registerTask({name = config.mspTaskName, key = config.mspTaskKey, wakeup = rfsuite.bg.wakeup})
+        system.registerTask({name = config.bgTaskName, key = config.bgTaskKey, wakeup = rfsuite.bg.wakeup, event = rfsuite.bg.event})
         system.registerWidget({name = config.rf2govName,key = config.rf2govKey, create = rfsuite.rf2gov.create, paint = rfsuite.rf2gov.paint, wakeup = rfsuite.rf2gov.wakeup, persistent = false})        
         system.registerWidget({name = config.rf2statusName,key = config.rf2statusKey, menu = rfsuite.rf2status.menu, event = rfsuite.rf2status.event, write = rfsuite.rf2status.write, read = rfsuite.rf2status.read, configure = rfsuite.rf2status.configure, create = rfsuite.rf2status.create, paint = rfsuite.rf2status.paint, wakeup = rfsuite.rf2status.wakeup, persistent = false})        
 end

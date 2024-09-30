@@ -11,18 +11,19 @@ bg.init = true
 
 local initTime
 
+
+
 function bg.wakeup()
 
         -- tasks dont have a create function
         -- so we handle this here with a loop that
         -- runs only once
         if bg.init == true then
-                bg.init = false
-                
+                bg.init = false                
                 -- tasks
+                bg.telemetry = assert(compile.loadScript(config.suiteDir .. "tasks/telemetry/telemetry.lua"))(config,compile)
                 bg.msp = assert(compile.loadScript(config.suiteDir .. "tasks/msp/msp.lua"))(config,compile)
                 bg.adjfunctions = assert(compile.loadScript(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
-                bg.clocksync = assert(compile.loadScript(config.suiteDir .. "tasks/clocksync/clocksync.lua"))(config,compile)
                 bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
         end
 
@@ -36,11 +37,22 @@ function bg.wakeup()
         
         -- we only want these to kick in maybe 5s after connection has come up. this allows things to stabilize
         if (os.clock() - initTime) > 5 then
-                bg.clocksync.wakeup()
+
                 bg.adjfunctions.wakeup()
         end
 
 
 end
+
+function bg.event(widget, category, value)
+
+        if bg.msp.event then
+                bg.msp.event(widget, category, value)
+        end
+        if bg.adjfunctions.event then
+                bg.adjfunctions.event(widget, category, value)
+        end
+end
+
 
 return bg

@@ -35,6 +35,9 @@ function msp.onConnectBgChecks()
                                 simulatorResponse = {0, 12, 7}
                         }
                         msp.mspQueue:add(message)
+                elseif rfsuite.config.clockSet == nil and msp.mspQueue:isProcessed() then
+                        rfsuite.utils.setRtc(rfsuite.utils.onRtcSet)
+                        rfsuite.utils.log("Sync clock: " .. os.clock())
 
                 elseif (rfsuite.config.tailMode == nil or rfsuite.config.swashMode == nil) and msp.mspQueue:isProcessed() then
                                 local message = {
@@ -111,6 +114,7 @@ function msp.resetState()
         rfsuite.config.servoCount = nil
         rfsuite.config.tailMode = nil
         rfsuite.config.apiVersion = nil
+        rfsuite.config.clockSet = nil
 end
 
 function msp.wakeup()
@@ -194,7 +198,7 @@ function msp.wakeup()
         
         local state
         if rfsuite.rssiSensor then
-                state = rfsuite.rssiSensor:state()
+                state = rfsuite.bg.telemetry.active()
         elseif system:getVersion().simulation == true then
                 state = true
         else
@@ -214,5 +218,7 @@ function msp.wakeup()
         end        
         msp.backgroundMsp = true 
 end
+
+
 
 return msp

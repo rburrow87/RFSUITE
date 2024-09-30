@@ -22,6 +22,12 @@ customSensors[#customSensors + 1] = {name  = "Roll Angle", appId = 0x5240, unit 
 sport.sensors = {}
 
 function sport.wakeup()
+
+    -- kill bad temp1 sensor
+    sport.badTemp1 = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0400})
+    if sport.badTemp1 ~= nil then
+        sport.badTemp1:drop()
+    end
     
     -- check for custom sensors and create them if they dont exist
     for x,v in pairs(customSensors) do

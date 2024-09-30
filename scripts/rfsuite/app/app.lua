@@ -41,6 +41,7 @@ rfsuite.config.activeProfileLast = nil
 rfsuite.config.activeRateLast = nil
 rfsuite.config.servoCount = nil
 rfsuite.config.servoOverride = nil
+rfsuite.config.clockSet = nil
 
 app.triggers = {}
 app.triggers = triggers
