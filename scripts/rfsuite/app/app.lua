@@ -535,7 +535,7 @@ function app.wakeupUI()
                     then 
                         profileCheckInterval = 0.1
                 else
-                       profileCheckInterval = 1.5
+                       profileCheckInterval = 0.8
                 end
                 
                 if (now - app.profileCheckScheduler) >= profileCheckInterval then
