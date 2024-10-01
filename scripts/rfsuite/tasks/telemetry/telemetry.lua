@@ -7,6 +7,8 @@ local compile = arg[2]
 local telemetry = {}
 
 local sensors = {}
+local protocol = nil
+
 local telemetrySOURCE
 local crsfSOURCE
 local tgt
@@ -26,6 +28,11 @@ sensorTable["adjF"]     = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 
 sensorTable["adjV"]     = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5111}, ccrsf = "AdjV", lcrsf = nil}
 
 
+function telemetry.getSensorProtocol()
+        return protocol
+end
+
+
 function telemetry.getSensorSource(name)
         local src
         if sensorTable[name] ~= nil then
@@ -42,11 +49,14 @@ function telemetry.getSensorSource(name)
                            end
                            
                            if crsfSOURCE ~= nil then
+                                protocol = 'ccrsf'
                                 src = system.getSource(sensorTable[name].ccrsf)
                            else 
+                                protocol = 'lcrsf'
                                 src = system.getSource(sensorTable[name].lcrsf)
                            end
                         else
+                                protocol = 'sport'
                                 src = system.getSource(sensorTable[name].sport)
                         end                  
                                                 
@@ -78,6 +88,7 @@ function telemetry.wakeup()
         if not telemetry.active() then
                 telemetrySOURCE = nil
                 crsfSOURCE = nil
+                protocol = nil
                 sensors = {}
         end
 

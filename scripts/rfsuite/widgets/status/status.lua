@@ -249,6 +249,19 @@ status.fullCellVoltage = 410
 status.minCellVoltage = 330
 status.warnCellVoltage = 350
 
+local governorMap = {}
+governorMap[0] = "OFF"
+governorMap[1] = "IDLE"
+governorMap[2] = "SPOOLUP"
+governorMap[3] = "RECOVERY"
+governorMap[4] = "ACTIVE"
+governorMap[5] = "THR-OFF"
+governorMap[6] = "LOST-HS"
+governorMap[7] = "AUTOROT"
+governorMap[8] = "BAILOUT"
+governorMap[100] = "DISABLED"
+governorMap[101] = "DISARMED"
+
 
 function status.create(widget)
     status.gfx_model = lcd.loadBitmap(model.bitmap())
@@ -2699,478 +2712,403 @@ function status.getSensors()
 
     elseif status.linkUP ~= 0 then
 
-        if telemetrySOURCE == nil then
-                telemetrySOURCE = system.getSource("Rx RSSI1")
-        end        
 
-        if telemetrySOURCE ~= nil then
-            -- we are running crsf
-            -- print("CRSF")
-            if  crsfSOURCE == nil then
-                crsfSOURCE = system.getSource("*Cnt")
-            end
-
-            if crsfSOURCE ~= nil then
-                -- crsf passthru
-                -- LEGACY CRSF REUSE
+                -- get sensors
                 voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
                 rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
                 currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
                 temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
                 temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
                 fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
-                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
-                adjfSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
+                adjSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
+                adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 adjvSOURCE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
                 rssiSOURCE = rfsuite.bg.telemetry.getSensorSource("rssi")
+                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")
 
-      
-                if voltageSOURCE ~= nil then
-                    voltage = voltageSOURCE:value()
-                    if voltage ~= nil then
-                        voltage = voltage * 100
-                    else
-                        voltage = 0
-                    end
-                else
-                    voltage = 0
-                end
+                if rfsuite.bg.telemetry.getSensorProtocol() == 'ccrsf' then
 
-                if rpmSOURCE ~= nil then
-                    if rpmSOURCE:maximum() == 1000.0 then rpmSOURCE:maximum(65000) end
+                        if voltageSOURCE ~= nil then
+                            voltage = voltageSOURCE:value()
+                            if voltage ~= nil then
+                                voltage = voltage * 100
+                            else
+                                voltage = 0
+                            end
+                        else
+                            voltage = 0
+                        end
 
-                    rpm = rpmSOURCE:value()
-                    if rpm ~= nil then
-                        rpm = rpm
-                    else
-                        rpm = 0
-                    end
-                else
-                    rpm = 0
-                end
+                        if rpmSOURCE ~= nil then
+                            if rpmSOURCE:maximum() == 1000.0 then rpmSOURCE:maximum(65000) end
 
-                if currentSOURCE ~= nil then
-                    if currentSOURCE:maximum() == 50.0 then currentSOURCE:maximum(400.0) end
+                            rpm = rpmSOURCE:value()
+                            if rpm ~= nil then
+                                rpm = rpm
+                            else
+                                rpm = 0
+                            end
+                        else
+                            rpm = 0
+                        end
 
-                    current = currentSOURCE:value()
-                    if current ~= nil then
-                        current = current * 10
-                    else
-                        current = 0
-                    end
-                else
-                    current = 0
-                end
+                        if currentSOURCE ~= nil then
+                            if currentSOURCE:maximum() == 50.0 then currentSOURCE:maximum(400.0) end
 
-                if temp_escSOURCE ~= nil then
-                    temp_esc = temp_escSOURCE:value()
-                    if temp_esc ~= nil then
-                        temp_esc = temp_esc * 100
-                    else
-                        temp_esc = 0
-                    end
-                else
-                    temp_esc = 0
-                end
+                            current = currentSOURCE:value()
+                            if current ~= nil then
+                                current = current * 10
+                            else
+                                current = 0
+                            end
+                        else
+                            current = 0
+                        end
 
-                if temp_mcuSOURCE ~= nil then
-                    temp_mcu = temp_mcuSOURCE:value()
-                    if temp_mcu ~= nil then
-                        temp_mcu = (temp_mcu) * 100
-                    else
-                        temp_mcu = 0
-                    end
-                else
-                    temp_mcu = 0
-                end
+                        if temp_escSOURCE ~= nil then
+                            temp_esc = temp_escSOURCE:value()
+                            if temp_esc ~= nil then
+                                temp_esc = temp_esc * 100
+                            else
+                                temp_esc = 0
+                            end
+                        else
+                            temp_esc = 0
+                        end
 
-                if fuelSOURCE ~= nil then
-                    fuel = fuelSOURCE:value()
-                    if fuel ~= nil then
-                        fuel = fuel
-                    else
-                        fuel = 0
-                    end
-                else
-                    fuel = 0
-                end
+                        if temp_mcuSOURCE ~= nil then
+                            temp_mcu = temp_mcuSOURCE:value()
+                            if temp_mcu ~= nil then
+                                temp_mcu = (temp_mcu) * 100
+                            else
+                                temp_mcu = 0
+                            end
+                        else
+                            temp_mcu = 0
+                        end
 
-                if mahSOURCE ~= nil then
-                    mah = mahSOURCE:value()
-                    if mah ~= nil then
-                        mah = mah
-                    else
-                        mah = 0
-                    end
-                else
-                    mah = 0
-                end
+                        if fuelSOURCE ~= nil then
+                            fuel = fuelSOURCE:value()
+                            if fuel ~= nil then
+                                fuel = fuel
+                            else
+                                fuel = 0
+                            end
+                        else
+                            fuel = 0
+                        end
 
-                if govSOURCE ~= nil then
-                    govId = govSOURCE:value()
+                        if mahSOURCE ~= nil then
+                            mah = mahSOURCE:value()
+                            if mah ~= nil then
+                                mah = mah
+                            else
+                                mah = 0
+                            end
+                        else
+                            mah = 0
+                        end
 
-                    -- print(govId)
-                    if govId == 0 then
-                        govmode = "OFF"
-                    elseif govId == 1 then
-                        govmode = "IDLE"
-                    elseif govId == 2 then
-                        govmode = "SPOOLUP"
-                    elseif govId == 3 then
-                        govmode = "RECOVERY"
-                    elseif govId == 4 then
-                        govmode = "ACTIVE"
-                    elseif govId == 5 then
-                        govmode = "THR-OFF"
-                    elseif govId == 6 then
-                        govmode = "LOST-HS"
-                    elseif govId == 7 then
-                        govmode = "AUTOROT"
-                    elseif govId == 8 then
-                        govmode = "BAILOUT"
-                    elseif govId == 100 then
-                        govmode = "DISABLED"
-                    elseif govId == 101 then
-                        govmode = "DISARMED"
-                    else
-                        govmode = "UNKNOWN"
-                    end
-                else
-                    govmode = ""
-                end
-                if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
-                    fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
-                else
-                    fm = ""
-                end
+                        if govSOURCE ~= nil then
+                            govId = govSOURCE:value()
 
-                if rssiSOURCE ~= nil then
-                    rssi = rssiSOURCE:value()
-                    if rssi ~= nil then
-                        rssi = rssi
-                    else
-                        rssi = 0
-                    end
-                else
-                    rssi = 0
-                end
+                            if governorMap[govId] == nil then
+                                govmode = "UNKNOWN"
+                            else
+                                govmode = governorMap[govId]
+                            end
 
-                if adjfSOURCE ~= nil then
-                    adjfunc = adjfSOURCE:value()
-                    if adjfunc ~= nil then
-                        adjfunc = adjfunc
-                    else
-                        adjfunc = 0
-                    end
-                else
-                    adjfunc = 0
-                end
+                        else
+                            govmode = ""
+                        end
+                        if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
+                            fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
+                        else
+                            fm = ""
+                        end
 
-                if adjvSOURCE ~= nil then
-                    adjvalue = adjvSOURCE:value()
-                    if adjvalue ~= nil then
-                        adjvalue = adjvalue
-                    else
-                        adjvalue = 0
-                    end
-                else
-                    adjvalue = 0
-                end
+                        if rssiSOURCE ~= nil then
+                            rssi = rssiSOURCE:value()
+                            if rssi ~= nil then
+                                rssi = rssi
+                            else
+                                rssi = 0
+                            end
+                        else
+                            rssi = 0
+                        end
 
-            else
+                        if adjSOURCE ~= nil then
+                            adjfunc = adjSOURCE:value()
+                            if adjfunc ~= nil then
+                                adjfunc = adjfunc
+                            else
+                                adjfunc = 0
+                            end
+                        else
+                            adjfunc = 0
+                        end
+
+                        if adjVALUE ~= nil then
+                            adjvalue = adjVALUE:value()
+                            if adjvalue ~= nil then
+                                adjvalue = adjvalue
+                            else
+                                adjvalue = 0
+                            end
+                        else
+                            adjvalue = 0
+                        end
                 
-            
-                -- LEGACY CRSF REUSE
-                voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
-                rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
-                currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
-                temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
-                temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
-                fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
-                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
-                adjSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
-                adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
-                mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
-                rssiSOURCE = rfsuite.bg.telemetry.getSensorSource("rssi")
-   
 
-                if voltageSOURCE ~= nil then
-                    voltage = voltageSOURCE:value()
-                    if voltage ~= nil then
-                        voltage = voltage * 100
+                elseif rfsuite.bg.telemetry.getSensorProtocol() == 'lcrsf' then
+
+                        if voltageSOURCE ~= nil then
+                            voltage = voltageSOURCE:value()
+                            if voltage ~= nil then
+                                voltage = voltage * 100
+                            else
+                                voltage = 0
+                            end
+                        else
+                            voltage = 0
+                        end
+
+                        if rpmSOURCE ~= nil then
+                            if rpmSOURCE:maximum() == 1000.0 then rpmSOURCE:maximum(65000) end
+
+                            rpm = rpmSOURCE:value()
+                            if rpm ~= nil then
+                                rpm = rpm
+                            else
+                                rpm = 0
+                            end
+                        else
+                            rpm = 0
+                        end
+
+                        if currentSOURCE ~= nil then
+                            if currentSOURCE:maximum() == 50.0 then currentSOURCE:maximum(400.0) end
+
+                            current = currentSOURCE:value()
+                            if current ~= nil then
+                                current = current * 10
+                            else
+                                current = 0
+                            end
+                        else
+                            current = 0
+                        end
+
+                        if temp_escSOURCE ~= nil then
+                            temp_esc = temp_escSOURCE:value()
+                            if temp_esc ~= nil then
+                                temp_esc = temp_esc * 100
+                            else
+                                temp_esc = 0
+                            end
+                        else
+                            temp_esc = 0
+                        end
+
+                        if temp_mcuSOURCE ~= nil then
+                            temp_mcu = temp_mcuSOURCE:value()
+                            if temp_mcu ~= nil then
+                                temp_mcu = (temp_mcu) * 100
+                            else
+                                temp_mcu = 0
+                            end
+                        else
+                            temp_mcu = 0
+                        end
+
+                        if fuelSOURCE ~= nil then
+                            fuel = fuelSOURCE:value()
+                            if fuel ~= nil then
+                                fuel = fuel
+                            else
+                                fuel = 0
+                            end
+                        else
+                            fuel = 0
+                        end
+
+                        if mahSOURCE ~= nil then
+                            mah = mahSOURCE:value()
+                            if mah ~= nil then
+                                mah = mah
+                            else
+                                mah = 0
+                            end
+                        else
+                            mah = 0
+                        end
+
+                        if govSOURCE ~= nil then govmode = govSOURCE:stringValue() end
+                        if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
+                            fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
+                        else
+                            fm = ""
+                        end
+
+                        if rssiSOURCE ~= nil then
+                            rssi = rssiSOURCE:value()
+                            if rssi ~= nil then
+                                rssi = rssi
+                            else
+                                rssi = 0
+                            end
+                        else
+                            rssi = 0
+                        end
+
+                        -- note.
+                        -- need to modify firmware to allow this to work for crsf correctly
+                        adjsource = 0
+                        adjvalue = 0
+
+
+                elseif rfsuite.bg.telemetry.getSensorProtocol() == 'sport' then
+            
+
+                    if voltageSOURCE ~= nil then
+                        voltage = voltageSOURCE:value()
+                        if voltage ~= nil then
+                            voltage = voltage * 100
+                        else
+                            voltage = 0
+                        end
                     else
                         voltage = 0
                     end
-                else
-                    voltage = 0
-                end
 
-                if rpmSOURCE ~= nil then
-                    if rpmSOURCE:maximum() == 1000.0 then rpmSOURCE:maximum(65000) end
-
-                    rpm = rpmSOURCE:value()
-                    if rpm ~= nil then
-                        rpm = rpm
+                    if rpmSOURCE ~= nil then
+                        rpm = rpmSOURCE:value()
+                        if rpm ~= nil then
+                            rpm = rpm
+                        else
+                            rpm = 0
+                        end
                     else
                         rpm = 0
                     end
-                else
-                    rpm = 0
-                end
 
-                if currentSOURCE ~= nil then
-                    if currentSOURCE:maximum() == 50.0 then currentSOURCE:maximum(400.0) end
-
-                    current = currentSOURCE:value()
-                    if current ~= nil then
-                        current = current * 10
+                    if currentSOURCE ~= nil then
+                        current = currentSOURCE:value()
+                        if current ~= nil then
+                            current = current * 10
+                        else
+                            current = 0
+                        end
                     else
                         current = 0
                     end
-                else
-                    current = 0
-                end
 
-                if temp_escSOURCE ~= nil then
-                    temp_esc = temp_escSOURCE:value()
-                    if temp_esc ~= nil then
-                        temp_esc = temp_esc * 100
+                    if temp_escSOURCE ~= nil then
+                        temp_esc = temp_escSOURCE:value()
+                        if temp_esc ~= nil then
+                            temp_esc = temp_esc * 100
+                        else
+                            temp_esc = 0
+                        end
                     else
                         temp_esc = 0
                     end
-                else
-                    temp_esc = 0
-                end
 
-                if temp_mcuSOURCE ~= nil then
-                    temp_mcu = temp_mcuSOURCE:value()
-                    if temp_mcu ~= nil then
-                        temp_mcu = (temp_mcu) * 100
+                    if temp_mcuSOURCE ~= nil then
+                        temp_mcu = temp_mcuSOURCE:value()
+                        if temp_mcu ~= nil then
+                            temp_mcu = temp_mcu * 100
+                        else
+                            temp_mcu = 0
+                        end
                     else
                         temp_mcu = 0
                     end
-                else
-                    temp_mcu = 0
-                end
 
-                if fuelSOURCE ~= nil then
-                    fuel = fuelSOURCE:value()
-                    if fuel ~= nil then
-                        fuel = fuel
+                    if fuelSOURCE ~= nil then
+                        fuel = fuelSOURCE:value()
+                        if fuel ~= nil then
+                            fuel = status.round(fuel, 0)
+                        else
+                            fuel = 0
+                        end
                     else
                         fuel = 0
                     end
-                else
-                    fuel = 0
-                end
 
-                if mahSOURCE ~= nil then
-                    mah = mahSOURCE:value()
-                    if mah ~= nil then
-                        mah = mah
+                    if mahSOURCE ~= nil then
+                        mah = mahSOURCE:value()
+                        if mah ~= nil then
+                            mah = mah
+                        else
+                            mah = 0
+                        end
                     else
                         mah = 0
                     end
-                else
-                    mah = 0
-                end
 
-                if govSOURCE ~= nil then govmode = govSOURCE:stringValue() end
-                if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
-                    fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
-                else
-                    fm = ""
-                end
+                    if govSOURCE ~= nil then
+                        govId = govSOURCE:value()
 
-                if rssiSOURCE ~= nil then
-                    rssi = rssiSOURCE:value()
-                    if rssi ~= nil then
-                        rssi = rssi
+                            if governorMap[govId] == nil then
+                                govmode = "UNKNOWN"
+                            else
+                                govmode = governorMap[govId]
+                            end                 
+                            
                     else
-                        rssi = 0
+                        govmode = ""
                     end
-                else
-                    rssi = 0
+                    if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
+                        fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
+                    else
+                        fm = ""
+                    end
+
+                    if adjSOURCE ~= nil then adjsource = adjSOURCE:value() end
+
+                    if adjVALUE ~= nil then adjvalue = adjVALUE:value() end
+
+                    rssi = status.linkUP
+
+
                 end
 
-                -- note.
-                -- need to modify firmware to allow this to work for crsf correctly
+    else
+                -- we have no link.  do something
+                -- print("NO LINK")
+                -- keep looking for new sensor
+                status.rssiSensor = status.getRssiSensor()
+
+                voltage = 0
+                rpm = 0
+                current = 0
+                temp_esc = 0
+                temp_mcu = 0
+                fuel = 0
+                mah = 0
+                govmode = "-"
+                fm = "-"
+                rssi = status.linkUP
                 adjsource = 0
                 adjvalue = 0
-            end
-
-        else
-            -- we are run sport    
-            -- set sources for everthing below
-            -- print("SPORT")
-            voltageSOURCE = rfsuite.bg.telemetry.getSensorSource("voltage")
-            rpmSOURCE = rfsuite.bg.telemetry.getSensorSource("rpm")
-            currentSOURCE =  rfsuite.bg.telemetry.getSensorSource("current")
-            temp_escSOURCE = rfsuite.bg.telemetry.getSensorSource("tempESC")
-            temp_mcuSOURCE = rfsuite.bg.telemetry.getSensorSource("tempMCU")    
-            fuelSOURCE = rfsuite.bg.telemetry.getSensorSource("fuel")  
-            govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")    
-            adjSOURCE = rfsuite.bg.telemetry.getSensorSource("adjF")
-            adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
-            mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
-    
-            -- voltageSOURCE = system.getSource("VFAS")
-            if voltageSOURCE ~= nil then
-                voltage = voltageSOURCE:value()
-                if voltage ~= nil then
-                    voltage = voltage * 100
-                else
-                    voltage = 0
-                end
-            else
-                voltage = 0
-            end
-
-            if rpmSOURCE ~= nil then
-                rpm = rpmSOURCE:value()
-                if rpm ~= nil then
-                    rpm = rpm
-                else
-                    rpm = 0
-                end
-            else
-                rpm = 0
-            end
-
-            if currentSOURCE ~= nil then
-                current = currentSOURCE:value()
-                if current ~= nil then
-                    current = current * 10
-                else
-                    current = 0
-                end
-            else
-                current = 0
-            end
-
-            if temp_escSOURCE ~= nil then
-                temp_esc = temp_escSOURCE:value()
-                if temp_esc ~= nil then
-                    temp_esc = temp_esc * 100
-                else
-                    temp_esc = 0
-                end
-            else
-                temp_esc = 0
-            end
-
-            if temp_mcuSOURCE ~= nil then
-                temp_mcu = temp_mcuSOURCE:value()
-                if temp_mcu ~= nil then
-                    temp_mcu = temp_mcu * 100
-                else
-                    temp_mcu = 0
-                end
-            else
-                temp_mcu = 0
-            end
-
-            if fuelSOURCE ~= nil then
-                fuel = fuelSOURCE:value()
-                if fuel ~= nil then
-                    fuel = status.round(fuel, 0)
-                else
-                    fuel = 0
-                end
-            else
-                fuel = 0
-            end
-
-            if mahSOURCE ~= nil then
-                mah = mahSOURCE:value()
-                if mah ~= nil then
-                    mah = mah
-                else
-                    mah = 0
-                end
-            else
-                mah = 0
-            end
-
-            if govSOURCE ~= nil then
-                govId = govSOURCE:value()
-
-                -- print(govId)
-                if govId == 0 then
-                    govmode = "OFF"
-                elseif govId == 1 then
-                    govmode = "IDLE"
-                elseif govId == 2 then
-                    govmode = "SPOOLUP"
-                elseif govId == 3 then
-                    govmode = "RECOVERY"
-                elseif govId == 4 then
-                    govmode = "ACTIVE"
-                elseif govId == 5 then
-                    govmode = "THR-OFF"
-                elseif govId == 6 then
-                    govmode = "LOST-HS"
-                elseif govId == 7 then
-                    govmode = "AUTOROT"
-                elseif govId == 8 then
-                    govmode = "BAILOUT"
-                elseif govId == 100 then
-                    govmode = "DISABLED"
-                elseif govId == 101 then
-                    govmode = "DISARMED"
-                else
-                    govmode = "UNKNOWN"
-                end
-            else
-                govmode = ""
-            end
-            if system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue() then
-                fm = system.getSource({category = CATEGORY_FLIGHT, member = FLIGHT_CURRENT_MODE}):stringValue()
-            else
-                fm = ""
-            end
-
-            if adjSOURCE ~= nil then adjsource = adjSOURCE:value() end
-
-            if adjVALUE ~= nil then adjvalue = adjVALUE:value() end
-
-            rssi = status.linkUP
-
+                
+                voltageSOURCE = nil
+                rpmSOURCE = nil
+                currentSOURCE = nil
+                temp_escSOURCE = nil
+                temp_mcuSOURCE = nil
+                fuelSOURCE = nil
+                govSOURCE = nil
+                adjSOURCE = nil
+                adjVALUE = nil
+                mahSOURCE = nil
+                telemetrySOURCE = nil
+                crsfSOURCE   = nil      
+        
         end
-    else
-        -- we have no link.  do something
-        -- print("NO LINK")
-        -- keep looking for new sensor
-        status.rssiSensor = status.getRssiSensor()
-
-        voltage = 0
-        rpm = 0
-        current = 0
-        temp_esc = 0
-        temp_mcu = 0
-        fuel = 0
-        mah = 0
-        govmode = "-"
-        fm = "-"
-        rssi = status.linkUP
-        adjsource = 0
-        adjvalue = 0
-        
-        voltageSOURCE = nil
-        rpmSOURCE = nil
-        currentSOURCE = nil
-        temp_escSOURCE = nil
-        temp_mcuSOURCE = nil
-        fuelSOURCE = nil
-        govSOURCE = nil
-        adjSOURCE = nil
-        adjVALUE = nil
-        mahSOURCE = nil
-        telemetrySOURCE = nil
-        crsfSOURCE   = nil      
-        
-    end
 
     -- calc fuel percentage if needed
     if status.calcfuelParam == true then
