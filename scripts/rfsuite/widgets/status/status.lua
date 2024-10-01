@@ -76,7 +76,7 @@ status.timetime.timerTimerStart = nil
 status.timetime.timerannouncementTimer = false
 status.timetime.timerannouncementTimerStart = nil
 status.timetime.timeraudioannouncementCounter = 0
-status.linkUP = 0
+status.linkUP = false
 status.linkUPTime = 0
 status.refresh = true
 status.isInConfiguration = false
@@ -267,7 +267,7 @@ function status.create(widget)
     status.gfx_model = lcd.loadBitmap(model.bitmap())
     status.gfx_heli = lcd.loadBitmap(suiteDir .. "widgets/status/gfx/heli.png")
     status.gfx_close = lcd.loadBitmap(suiteDir .. "widgets/status/gfx/close.png")
-    status.rssiSensor = status.getRssiSensor()
+    --status.rssiSensor = status.getRssiSensor()
 
     if tonumber(status.sensorMakeNumber(environment.version)) < 159 then
         status.screenError("ETHOS < V1.5.9")
@@ -929,21 +929,7 @@ function status.configure(widget)
     return widget
 end
 
-function status.getRssiSensor()
-    if environment.simulation then return 100 end
 
-    local rssiNames = {"RSSI", "RSSI 2.4G", "RSSI 900M", "Rx RSSI1", "Rx RSSI2", "RSSI Int", "RSSI Ext"}
-    for i, name in ipairs(rssiNames) do
-        status.rssiSensor = system.getSource(name)
-        if status.rssiSensor then return status.rssiSensor end
-    end
-end
-
-function status.getRSSI()
-    if environment.simulation == true then return 100 end
-    if status.rssiSensor ~= nil and rfsuite.bg.telemetry and rfsuite.bg.telemetry.active() then return status.rssiSensor:value() end
-    return 0
-end
 
 function status.screenError(msg)
     local w, h = lcd.getWindowSize()
@@ -982,7 +968,7 @@ end
 function status.noTelem()
 
     lcd.font(FONT_STD)
-    str = "NO DATA"
+    str = "NO LINK"
 
     status.theme = status.getThemeInfo()
     local w, h = lcd.getWindowSize()
@@ -1759,900 +1745,907 @@ end
 
 function status.paint(widget)
 
-    status.isVisible = lcd.isVisible()
-    status.isDARKMODE = lcd.darkMode()
 
-    status.isInConfiguration = false
-
-    local cellVoltage = status.warnCellVoltage / 100
-
-    if status.sensors.voltage ~= nil then
-        -- we use status.lowvoltagsenseParam is use to raise or lower sensitivity
-        if status.lowvoltagsenseParam == 1 then
-            zippo = 0.2
-        elseif status.lowvoltagsenseParam == 2 then
-            zippo = 0.1
-        else
-            zippo = 0
-        end
-        --low
-        if status.sensors.voltage / 100 < ((cellVoltage * status.cellsParam) + zippo) then
-            -- only do audio alert if between a range
-            if status.sensors.voltage / 100 > ((cellVoltage * status.cellsParam/2) + zippo) then
-                status.voltageIsLowAlert = true
-            else
-                status.voltageIsLowAlert = false
-            end
-            -- we are low.. but above determs if we play the alert
-            status.voltageIsLow = true
-        else
-            status.voltageIsLow = false
-            status.voltageIsLowAlert = false
-        end
-        
-        
-        --getting low
-        if status.sensors.voltage / 100 < (((cellVoltage + 0.2) * status.cellsParam) + zippo) then
-            status.voltageIsGettingLow = true
-        else
-            status.voltageIsGettingLow = false
-        end
+    if not rfsuite.bg.active() then
+        status.screenError("PLEASE ENABLE THE BACKGROUND TASK")
+        lcd.invalidate()
+        return
     else
-        status.voltageIsLow = false
-        status.voltageIsGettingLow = false
-    end
 
+            status.isVisible = lcd.isVisible()
+            status.isDARKMODE = lcd.darkMode()
 
-    -- fuel detection
-    if status.sensors.voltage ~= nil and status.lowfuelParam ~= nil then
-        if status.sensors.fuel < status.lowfuelParam then
-            status.fuelIsLow = true
-        else
-            status.fuelIsLow = false
-        end
-    else
-        status.fuelIsLow = false
-    end
+            status.isInConfiguration = false
 
-    -- fuel detection
-    if status.sensors.voltage ~= nil and status.lowfuelParam ~= nil then
+            local cellVoltage = status.warnCellVoltage / 100
 
-        if status.sensors.fuel < (status.lowfuelParam + (status.lowfuelParam * 20)/100) then
-            status.fuelIsGettingLow = true
-        else
-            status.fuelIsGettingLow = false
-        end
-    else
-        status.fuelIsGettingLow = false
-    end
-
-    -- -----------------------------------------------------------------------------------------------
-    -- write values to boxes
-    -- -----------------------------------------------------------------------------------------------
-
-    local theme = status.getThemeInfo()
-    local w, h = lcd.getWindowSize()
-
-    if status.isVisible then
-        -- blank out display
-        if status.isDARKMODE then
-            -- dark theme
-            lcd.color(lcd.RGB(16, 16, 16))
-        else
-            -- light theme
-            lcd.color(lcd.RGB(209, 208, 208))
-        end
-        lcd.drawFilledRectangle(0, 0, w, h)
-
-        -- hard error
-        if theme.supportedRADIO ~= true then
-            status.screenError("UNKNOWN" .. " " .. environment.board)
-            return
-        end
-
-        -- widget size
-        if environment.board == "V20" or environment.board == "XES" or environment.board == "X20" or environment.board == "X20S" or environment.board == "X20PRO" or environment.board == "X20PROAW" then
-            if w ~= 784 and h ~= 294 then
-                status.screenError("DISPLAY SIZE INVALID")
-                return
-            end
-        end
-        if environment.board == "X18" or environment.board == "X18S" then
-            smallTEXT = true
-            if w ~= 472 and h ~= 191 then
-                status.screenError("DISPLAY SIZE INVALID")
-                return
-            end
-        end
-        if environment.board == "X14" or environment.board == "X14S" then
-            if w ~= 630 and h ~= 236 then
-                status.screenError("DISPLAY SIZE INVALID")
-                return
-            end
-        end
-        if environment.board == "TWXLITE" or environment.board == "TWXLITES" then
-            if w ~= 472 and h ~= 191 then
-                status.screenError("DISPLAY SIZE INVALID")
-                return
-            end
-        end
-        if environment.board == "X10EXPRESS" or environment.board == "X10" or environment.board == "X10S" or environment.board == "X12" or environment.board == "X12S" then
-            if w ~= 472 and h ~= 158 then
-                status.screenError("DISPLAY SIZE INVALID")
-                return
-            end
-        end
-
-        boxW = theme.fullBoxW - theme.colSpacing
-        boxH = theme.fullBoxH - theme.colSpacing
-
-        boxHs = theme.fullBoxH / 2 - theme.colSpacing
-        boxWs = theme.fullBoxW / 2 - theme.colSpacing
-
-        -- FUEL
-        if status.sensors.fuel ~= nil then
-
-            sensorWARN = 3
-            if status.fuelIsGettingLow then sensorWARN = 2 end
-            if status.fuelIsLow then sensorWARN = 1 end
-            
-
-            sensorVALUE = status.sensors.fuel
-            
-
-            if status.sensors.voltage <= 50 then
-                sensorVALUE = 0
-            end
-
-            if status.sensors.fuel < 5 then sensorVALUE = "0" end
-
-            if status.titleParam == true then
-                sensorTITLE = "FUEL"
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorFuelMin == 0 or status.sensorFuelMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.sensorFuelMin
-            end
-
-            if status.sensorFuelMax == 0 or status.sensorFuelMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.sensorFuelMax
-            end
-
-            sensorUNIT = "%"
-
-            local sensorTGT = 'fuel'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- RPM
-        if status.sensors.rpm ~= nil then
-
-            sensorVALUE = status.sensors.rpm
-
-            if status.sensors.rpm < 5 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_rpm
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorRPMMin == 0 or status.sensorRPMMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.sensorRPMMin
-            end
-
-            if status.sensorRPMMax == 0 or status.sensorRPMMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.sensorRPMMax
-            end
-
-            sensorUNIT = "rpm"
-            sensorWARN = 0
-
-            local sensorTGT = 'rpm'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- VOLTAGE
-        if status.sensors.voltage ~= nil then
-
-            sensorWARN = 3
-            if status.voltageIsGettingLow then sensorWARN = 2 end
-            if status.voltageIsLow then sensorWARN = 1 end
-
-            sensorVALUE = status.sensors.voltage / 100
-
-            if sensorVALUE < 1 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_voltage
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorVoltageMin == 0 or status.sensorVoltageMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.sensorVoltageMin / 100
-            end
-
-            if status.sensorVoltageMax == 0 or status.sensorVoltageMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.sensorVoltageMax / 100
-            end
-
-            sensorUNIT = "v"
-
-            local sensorTGT = 'voltage'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- CURRENT
-        if status.sensors.current ~= nil then
-
-            sensorVALUE = status.sensors.current / 10
-            if status.linkUP == 0 then
-                sensorVALUE = 0
-            else
-                if sensorVALUE == 0 then
-                    local fakeC
-                    if status.sensors.rpm > 5 then
-                        fakeC = 1
-                    elseif status.sensors.rpm > 50 then
-                        fakeC = 2
-                    elseif status.sensors.rpm > 100 then
-                        fakeC = 3
-                    elseif status.sensors.rpm > 200 then
-                        fakeC = 4
-                    elseif status.sensors.rpm > 500 then
-                        fakeC = 5
-                    elseif status.sensors.rpm > 1000 then
-                        fakeC = 6
+            if status.sensors.voltage ~= nil then
+                -- we use status.lowvoltagsenseParam is use to raise or lower sensitivity
+                if status.lowvoltagsenseParam == 1 then
+                    zippo = 0.2
+                elseif status.lowvoltagsenseParam == 2 then
+                    zippo = 0.1
+                else
+                    zippo = 0
+                end
+                --low
+                if status.sensors.voltage / 100 < ((cellVoltage * status.cellsParam) + zippo) then
+                    -- only do audio alert if between a range
+                    if status.sensors.voltage / 100 > ((cellVoltage * status.cellsParam/2) + zippo) then
+                        status.voltageIsLowAlert = true
                     else
-                        if status.sensors.voltage > 0 then
-                            fakeC = math.random(1, 3) / 10
-                        else
-                            fakeC = 0
+                        status.voltageIsLowAlert = false
+                    end
+                    -- we are low.. but above determs if we play the alert
+                    status.voltageIsLow = true
+                else
+                    status.voltageIsLow = false
+                    status.voltageIsLowAlert = false
+                end
+                
+                
+                --getting low
+                if status.sensors.voltage / 100 < (((cellVoltage + 0.2) * status.cellsParam) + zippo) then
+                    status.voltageIsGettingLow = true
+                else
+                    status.voltageIsGettingLow = false
+                end
+            else
+                status.voltageIsLow = false
+                status.voltageIsGettingLow = false
+            end
+
+
+            -- fuel detection
+            if status.sensors.voltage ~= nil and status.lowfuelParam ~= nil then
+                if status.sensors.fuel < status.lowfuelParam then
+                    status.fuelIsLow = true
+                else
+                    status.fuelIsLow = false
+                end
+            else
+                status.fuelIsLow = false
+            end
+
+            -- fuel detection
+            if status.sensors.voltage ~= nil and status.lowfuelParam ~= nil then
+
+                if status.sensors.fuel < (status.lowfuelParam + (status.lowfuelParam * 20)/100) then
+                    status.fuelIsGettingLow = true
+                else
+                    status.fuelIsGettingLow = false
+                end
+            else
+                status.fuelIsGettingLow = false
+            end
+
+            -- -----------------------------------------------------------------------------------------------
+            -- write values to boxes
+            -- -----------------------------------------------------------------------------------------------
+
+            local theme = status.getThemeInfo()
+            local w, h = lcd.getWindowSize()
+
+            if status.isVisible then
+                -- blank out display
+                if status.isDARKMODE then
+                    -- dark theme
+                    lcd.color(lcd.RGB(16, 16, 16))
+                else
+                    -- light theme
+                    lcd.color(lcd.RGB(209, 208, 208))
+                end
+                lcd.drawFilledRectangle(0, 0, w, h)
+
+                -- hard error
+                if theme.supportedRADIO ~= true then
+                    status.screenError("UNKNOWN" .. " " .. environment.board)
+                    return
+                end
+
+                -- widget size
+                if environment.board == "V20" or environment.board == "XES" or environment.board == "X20" or environment.board == "X20S" or environment.board == "X20PRO" or environment.board == "X20PROAW" then
+                    if w ~= 784 and h ~= 294 then
+                        status.screenError("DISPLAY SIZE INVALID")
+                        return
+                    end
+                end
+                if environment.board == "X18" or environment.board == "X18S" then
+                    smallTEXT = true
+                    if w ~= 472 and h ~= 191 then
+                        status.screenError("DISPLAY SIZE INVALID")
+                        return
+                    end
+                end
+                if environment.board == "X14" or environment.board == "X14S" then
+                    if w ~= 630 and h ~= 236 then
+                        status.screenError("DISPLAY SIZE INVALID")
+                        return
+                    end
+                end
+                if environment.board == "TWXLITE" or environment.board == "TWXLITES" then
+                    if w ~= 472 and h ~= 191 then
+                        status.screenError("DISPLAY SIZE INVALID")
+                        return
+                    end
+                end
+                if environment.board == "X10EXPRESS" or environment.board == "X10" or environment.board == "X10S" or environment.board == "X12" or environment.board == "X12S" then
+                    if w ~= 472 and h ~= 158 then
+                        status.screenError("DISPLAY SIZE INVALID")
+                        return
+                    end
+                end
+
+                boxW = theme.fullBoxW - theme.colSpacing
+                boxH = theme.fullBoxH - theme.colSpacing
+
+                boxHs = theme.fullBoxH / 2 - theme.colSpacing
+                boxWs = theme.fullBoxW / 2 - theme.colSpacing
+
+                -- FUEL
+                if status.sensors.fuel ~= nil then
+
+                    sensorWARN = 3
+                    if status.fuelIsGettingLow then sensorWARN = 2 end
+                    if status.fuelIsLow then sensorWARN = 1 end
+                    
+
+                    sensorVALUE = status.sensors.fuel
+                    
+
+                    if status.sensors.voltage <= 50 then
+                        sensorVALUE = 0
+                    end
+
+                    if status.sensors.fuel < 5 then sensorVALUE = "0" end
+
+                    if status.titleParam == true then
+                        sensorTITLE = "FUEL"
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorFuelMin == 0 or status.sensorFuelMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.sensorFuelMin
+                    end
+
+                    if status.sensorFuelMax == 0 or status.sensorFuelMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.sensorFuelMax
+                    end
+
+                    sensorUNIT = "%"
+
+                    local sensorTGT = 'fuel'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- RPM
+                if status.sensors.rpm ~= nil then
+
+                    sensorVALUE = status.sensors.rpm
+
+                    if status.sensors.rpm < 5 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_rpm
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorRPMMin == 0 or status.sensorRPMMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.sensorRPMMin
+                    end
+
+                    if status.sensorRPMMax == 0 or status.sensorRPMMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.sensorRPMMax
+                    end
+
+                    sensorUNIT = "rpm"
+                    sensorWARN = 0
+
+                    local sensorTGT = 'rpm'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- VOLTAGE
+                if status.sensors.voltage ~= nil then
+
+                    sensorWARN = 3
+                    if status.voltageIsGettingLow then sensorWARN = 2 end
+                    if status.voltageIsLow then sensorWARN = 1 end
+
+                    sensorVALUE = status.sensors.voltage / 100
+
+                    if sensorVALUE < 1 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_voltage
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorVoltageMin == 0 or status.sensorVoltageMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.sensorVoltageMin / 100
+                    end
+
+                    if status.sensorVoltageMax == 0 or status.sensorVoltageMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.sensorVoltageMax / 100
+                    end
+
+                    sensorUNIT = "v"
+
+                    local sensorTGT = 'voltage'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- CURRENT
+                if status.sensors.current ~= nil then
+
+                    sensorVALUE = status.sensors.current / 10
+                    if status.linkUP == false then
+                        sensorVALUE = 0
+                    else
+                        if sensorVALUE == 0 then
+                            local fakeC
+                            if status.sensors.rpm > 5 then
+                                fakeC = 1
+                            elseif status.sensors.rpm > 50 then
+                                fakeC = 2
+                            elseif status.sensors.rpm > 100 then
+                                fakeC = 3
+                            elseif status.sensors.rpm > 200 then
+                                fakeC = 4
+                            elseif status.sensors.rpm > 500 then
+                                fakeC = 5
+                            elseif status.sensors.rpm > 1000 then
+                                fakeC = 6
+                            else
+                                if status.sensors.voltage > 0 then
+                                    fakeC = math.random(1, 3) / 10
+                                else
+                                    fakeC = 0
+                                end
+                            end
+                            sensorVALUE = fakeC
                         end
                     end
-                    sensorVALUE = fakeC
-                end
-            end
-            if status.sensors.voltage <= 50 then
-                sensorVALUE = 0
-            end
-            
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_current
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorCurrentMin == 0 or status.sensorCurrentMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.sensorCurrentMin / 10
-            end
-
-            if status.sensorCurrentMax == 0 or status.sensorCurrentMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.sensorCurrentMax / 10
-            end
-
-            sensorUNIT = "A"
-            sensorWARN = 0
-
-            local sensorTGT = 'current'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- TEMP ESC
-        if status.sensors.temp_esc ~= nil then
-
-            sensorVALUE = status.round(status.sensors.temp_esc / 100, 0)
-
-            if sensorVALUE < 1 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_tempESC
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorTempESCMin == 0 or status.sensorTempESCMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.round(status.sensorTempESCMin / 100, 0)
-            end
-
-            if status.sensorTempESCMax == 0 or status.sensorTempESCMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.round(status.sensorTempESCMax / 100, 0)
-            end
-
-            sensorUNIT = "°"
-            sensorWARN = 0
-
-            local sensorTGT = 'temp_esc'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- TEMP MCU
-        if status.sensors.temp_mcu ~= nil then
-
-            sensorVALUE = status.round(status.sensors.temp_mcu / 100, 0)
-
-            if sensorVALUE < 1 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_tempMCU
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorTempMCUMin == 0 or status.sensorTempMCUMin == nil or status.theTIME == 0 then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.round(status.sensorTempMCUMin / 100, 0)
-            end
-
-            if status.sensorTempMCUMax == 0 or status.sensorTempMCUMax == nil or status.theTIME == 0 then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.round(status.sensorTempMCUMax / 100, 0)
-            end
-
-            sensorUNIT = "°"
-            sensorWARN = 0
-
-            local sensorTGT = 'temp_mcu'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- RSSI
-        if status.sensors.rssi ~= nil and (status.quadBoxParam == 0 or status.quadBoxParam == 1) then
-
-            sensorVALUE = status.sensors.rssi
-
-            if sensorVALUE < 1 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_rssi
-            else
-                sensorTITLE = ""
-            end
-
-            if status.sensorRSSIMin == 0 or status.sensorRSSIMin == nil then
-                sensorMIN = "-"
-            else
-                sensorMIN = status.sensorRSSIMin
-            end
-
-            if status.sensorRSSIMax == 0 or status.sensorRSSIMax == nil then
-                sensorMAX = "-"
-            else
-                sensorMAX = status.sensorRSSIMax
-            end
-
-            sensorUNIT = "%"
-            sensorWARN = 0
-
-            local sensorTGT = 'rssi'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        end
-
-        -- mah
-        if status.sensors.mah ~= nil then
-
-            sensorVALUE = status.sensors.mah
-
-            if sensorVALUE < 1 then sensorVALUE = 0 end
-
-            if status.titleParam == true then
-                sensorTITLE = theme.title_mah
-            else
-                sensorTITLE = ""
-            end
-
-            if sensorMAHMin == 0 or sensorMAHMin == nil then
-                sensorMIN = "-"
-            else
-                sensorMIN = sensorMAHMin
-            end
-
-            if sensorMAHMax == 0 or sensorMAHMax == nil then
-                sensorMAX = "-"
-            else
-                sensorMAX = sensorMAHMax
-            end
-
-            sensorUNIT = ""
-            sensorWARN = 0
-
-            local sensorTGT = 'mah'
-            status.sensordisplay[sensorTGT] = {}
-            status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-            status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-            status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-            status.sensordisplay[sensorTGT]['min'] = sensorMIN
-            status.sensordisplay[sensorTGT]['max'] = sensorMAX
-            status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-        end
-
-        -- TIMER
-        sensorMIN = nil
-        sensorMAX = nil
-
-        if status.theTIME ~= nil or status.theTIME == 0 then
-            str = status.SecondsToClock(status.theTIME)
-        else
-            str = "00:00:00"
-        end
-
-        if status.titleParam == true then
-            sensorTITLE = theme.title_time
-        else
-            sensorTITLE = ""
-        end
-
-        sensorVALUE = str
-
-        sensorUNIT = ""
-        sensorWARN = 0
-
-        local sensorTGT = 'timer'
-        status.sensordisplay[sensorTGT] = {}
-        status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-        status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-        status.sensordisplay[sensorTGT]['warn'] = sensorWARN
-        status.sensordisplay[sensorTGT]['min'] = sensorMIN
-        status.sensordisplay[sensorTGT]['max'] = sensorMAX
-        status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        -- GOV MODE
-        if status.govmodeParam == 0 then
-            if status.sensors.govmode == nil then status.sensors.govmode = "INIT" end
-            str = status.sensors.govmode
-            sensorTITLE = theme.title_governor
-        else
-            str = status.sensors.fm
-            sensorTITLE = theme.title_fm
-        end
-        sensorVALUE = str
-
-        if status.titleParam ~= true then sensorTITLE = "" end
-
-        sensorUNIT = ""
-        sensorWARN = 0
-        sensorMIN = nil
-        sensorMAX = nil
-
-        local sensorTGT = 'governor'
-        status.sensordisplay[sensorTGT] = {}
-        status.sensordisplay[sensorTGT]['title'] = sensorTITLE
-        status.sensordisplay[sensorTGT]['value'] = sensorVALUE
-        status.sensordisplay[sensorTGT]['warn'] = status.govColorFlag(sensorVALUE)
-        status.sensordisplay[sensorTGT]['min'] = sensorMIN
-        status.sensordisplay[sensorTGT]['max'] = sensorMAX
-        status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
-
-        -- loop throught 6 box and link into status.sensordisplay to choose where to put things
-        local c = 1
-        while c <= 6 do
-
-            -- reset all values
-            sensorVALUE = nil
-            sensorUNIT = nil
-            sensorMIN = nil
-            sensorMAX = nil
-            sensorWARN = 0
-            sensorTITLE = nil
-            sensorTGT = nil
-            smallBOX = false
-
-            -- column positions and tgt
-            if c == 1 then
-                posX = 0
-                posY = theme.colSpacing
-                sensorTGT = status.layoutBox1Param
-            end
-            if c == 2 then
-                posX = 0 + theme.colSpacing + boxW
-                posY = theme.colSpacing
-                sensorTGT = status.layoutBox2Param
-            end
-            if c == 3 then
-                posX = 0 + theme.colSpacing + boxW + theme.colSpacing + boxW
-                posY = theme.colSpacing
-                sensorTGT = status.layoutBox3Param
-            end
-            if c == 4 then
-                posX = 0
-                posY = theme.colSpacing + boxH + theme.colSpacing
-                sensorTGT = status.layoutBox4Param
-            end
-            if c == 5 then
-                posX = 0 + theme.colSpacing + boxW
-                posY = theme.colSpacing + boxH + theme.colSpacing
-                sensorTGT = status.layoutBox5Param
-            end
-            if c == 6 then
-                posX = 0 + theme.colSpacing + boxW + theme.colSpacing + boxW
-                posY = theme.colSpacing + boxH + theme.colSpacing
-                sensorTGT = status.layoutBox6Param
-            end
-
-            -- remap sensorTGT
-            if sensorTGT == 1 then sensorTGT = 'timer' end
-            if sensorTGT == 2 then sensorTGT = 'voltage' end
-            if sensorTGT == 3 then sensorTGT = 'fuel' end
-            if sensorTGT == 4 then sensorTGT = 'current' end
-            if sensorTGT == 17 then sensorTGT = 'mah' end
-            if sensorTGT == 5 then sensorTGT = 'rpm' end
-            if sensorTGT == 6 then sensorTGT = 'rssi' end
-            if sensorTGT == 7 then sensorTGT = 'temp_esc' end
-            if sensorTGT == 8 then sensorTGT = 'temp_mcu' end
-            if sensorTGT == 9 then sensorTGT = 'image' end
-            if sensorTGT == 10 then sensorTGT = 'governor' end
-            if sensorTGT == 11 then sensorTGT = 'image__gov' end
-            if sensorTGT == 12 then sensorTGT = 'rssi__timer' end
-            if sensorTGT == 13 then sensorTGT = 'temp_esc__temp_mcu' end
-            if sensorTGT == 14 then sensorTGT = 'voltage__fuel' end
-            if sensorTGT == 15 then sensorTGT = 'voltage__current' end
-            if sensorTGT == 16 then sensorTGT = 'voltage__mah' end
-            if sensorTGT == 20 then sensorTGT = 'rssi_timer_temp_esc_temp_mcu' end
-            if sensorTGT == 21 then sensorTGT = 'max_current' end
-            if sensorTGT == 22 then sensorTGT = 'lq__gov' end
-
-            -- set sensor values based on sensorTGT
-            if status.sensordisplay[sensorTGT] ~= nil then
-                -- all std values.  =
-                sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                sensorMIN = status.sensordisplay[sensorTGT]['min']
-                sensorMAX = status.sensordisplay[sensorTGT]['max']
-                sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                sensorTITLE = status.sensordisplay[sensorTGT]['title']
-                status.telemetryBox(posX, posY, boxW, boxH, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-            else
-
-                if sensorTGT == 'image' then
-                    -- IMAGE
-                    if status.gfx_model ~= nil then
-                        status.telemetryBoxImage(posX, posY, boxW, boxH, status.gfx_model)
-                    else
-                        status.telemetryBoxImage(posX, posY, boxW, boxH, status.gfx_heli)
+                    if status.sensors.voltage <= 50 then
+                        sensorVALUE = 0
                     end
-                end
+                    
 
-                if sensorTGT == 'image__gov' then
-                    -- IMAGE + GOVERNOR
-                    if status.gfx_model ~= nil then
-                        status.telemetryBoxImage(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), status.gfx_model)
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_current
                     else
-                        status.telemetryBoxImage(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), status.gfx_heli)
+                        sensorTITLE = ""
                     end
 
-                    sensorTGT = "governor"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
+                    if status.sensorCurrentMin == 0 or status.sensorCurrentMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.sensorCurrentMin / 10
+                    end
 
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
+                    if status.sensorCurrentMax == 0 or status.sensorCurrentMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.sensorCurrentMax / 10
+                    end
 
-                end
+                    sensorUNIT = "A"
+                    sensorWARN = 0
 
-                if sensorTGT == 'lq__gov' then
-                    -- LQ + GOV
-                    sensorTGT = "rssi"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "governor"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
+                    local sensorTGT = 'current'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
 
                 end
 
-                if sensorTGT == 'rssi__timer' then
+                -- TEMP ESC
+                if status.sensors.temp_esc ~= nil then
 
-                    sensorTGT = "rssi"
+                    sensorVALUE = status.round(status.sensors.temp_esc / 100, 0)
+
+                    if sensorVALUE < 1 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_tempESC
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorTempESCMin == 0 or status.sensorTempESCMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.round(status.sensorTempESCMin / 100, 0)
+                    end
+
+                    if status.sensorTempESCMax == 0 or status.sensorTempESCMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.round(status.sensorTempESCMax / 100, 0)
+                    end
+
+                    sensorUNIT = "°"
+                    sensorWARN = 0
+
+                    local sensorTGT = 'temp_esc'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- TEMP MCU
+                if status.sensors.temp_mcu ~= nil then
+
+                    sensorVALUE = status.round(status.sensors.temp_mcu / 100, 0)
+
+                    if sensorVALUE < 1 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_tempMCU
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorTempMCUMin == 0 or status.sensorTempMCUMin == nil or status.theTIME == 0 then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.round(status.sensorTempMCUMin / 100, 0)
+                    end
+
+                    if status.sensorTempMCUMax == 0 or status.sensorTempMCUMax == nil or status.theTIME == 0 then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.round(status.sensorTempMCUMax / 100, 0)
+                    end
+
+                    sensorUNIT = "°"
+                    sensorWARN = 0
+
+                    local sensorTGT = 'temp_mcu'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- RSSI
+                if status.sensors.rssi ~= nil and (status.quadBoxParam == 0 or status.quadBoxParam == 1) then
+
+                    sensorVALUE = status.sensors.rssi
+
+                    if sensorVALUE < 1 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_rssi
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if status.sensorRSSIMin == 0 or status.sensorRSSIMin == nil then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = status.sensorRSSIMin
+                    end
+
+                    if status.sensorRSSIMax == 0 or status.sensorRSSIMax == nil then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = status.sensorRSSIMax
+                    end
+
+                    sensorUNIT = "%"
+                    sensorWARN = 0
+
+                    local sensorTGT = 'rssi'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                end
+
+                -- mah
+                if status.sensors.mah ~= nil then
+
+                    sensorVALUE = status.sensors.mah
+
+                    if sensorVALUE < 1 then sensorVALUE = 0 end
+
+                    if status.titleParam == true then
+                        sensorTITLE = theme.title_mah
+                    else
+                        sensorTITLE = ""
+                    end
+
+                    if sensorMAHMin == 0 or sensorMAHMin == nil then
+                        sensorMIN = "-"
+                    else
+                        sensorMIN = sensorMAHMin
+                    end
+
+                    if sensorMAHMax == 0 or sensorMAHMax == nil then
+                        sensorMAX = "-"
+                    else
+                        sensorMAX = sensorMAHMax
+                    end
+
+                    sensorUNIT = ""
+                    sensorWARN = 0
+
+                    local sensorTGT = 'mah'
+                    status.sensordisplay[sensorTGT] = {}
+                    status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                    status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                    status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                    status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                    status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                    status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+                end
+
+                -- TIMER
+                sensorMIN = nil
+                sensorMAX = nil
+
+                if status.theTIME ~= nil or status.theTIME == 0 then
+                    str = status.SecondsToClock(status.theTIME)
+                else
+                    str = "00:00:00"
+                end
+
+                if status.titleParam == true then
+                    sensorTITLE = theme.title_time
+                else
+                    sensorTITLE = ""
+                end
+
+                sensorVALUE = str
+
+                sensorUNIT = ""
+                sensorWARN = 0
+
+                local sensorTGT = 'timer'
+                status.sensordisplay[sensorTGT] = {}
+                status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                status.sensordisplay[sensorTGT]['warn'] = sensorWARN
+                status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                -- GOV MODE
+                if status.govmodeParam == 0 then
+                    if status.sensors.govmode == nil then status.sensors.govmode = "INIT" end
+                    str = status.sensors.govmode
+                    sensorTITLE = theme.title_governor
+                else
+                    str = status.sensors.fm
+                    sensorTITLE = theme.title_fm
+                end
+                sensorVALUE = str
+
+                if status.titleParam ~= true then sensorTITLE = "" end
+
+                sensorUNIT = ""
+                sensorWARN = 0
+                sensorMIN = nil
+                sensorMAX = nil
+
+                local sensorTGT = 'governor'
+                status.sensordisplay[sensorTGT] = {}
+                status.sensordisplay[sensorTGT]['title'] = sensorTITLE
+                status.sensordisplay[sensorTGT]['value'] = sensorVALUE
+                status.sensordisplay[sensorTGT]['warn'] = status.govColorFlag(sensorVALUE)
+                status.sensordisplay[sensorTGT]['min'] = sensorMIN
+                status.sensordisplay[sensorTGT]['max'] = sensorMAX
+                status.sensordisplay[sensorTGT]['unit'] = sensorUNIT
+
+                -- loop throught 6 box and link into status.sensordisplay to choose where to put things
+                local c = 1
+                while c <= 6 do
+
+                    -- reset all values
+                    sensorVALUE = nil
+                    sensorUNIT = nil
+                    sensorMIN = nil
+                    sensorMAX = nil
+                    sensorWARN = 0
+                    sensorTITLE = nil
+                    sensorTGT = nil
+                    smallBOX = false
+
+                    -- column positions and tgt
+                    if c == 1 then
+                        posX = 0
+                        posY = theme.colSpacing
+                        sensorTGT = status.layoutBox1Param
+                    end
+                    if c == 2 then
+                        posX = 0 + theme.colSpacing + boxW
+                        posY = theme.colSpacing
+                        sensorTGT = status.layoutBox2Param
+                    end
+                    if c == 3 then
+                        posX = 0 + theme.colSpacing + boxW + theme.colSpacing + boxW
+                        posY = theme.colSpacing
+                        sensorTGT = status.layoutBox3Param
+                    end
+                    if c == 4 then
+                        posX = 0
+                        posY = theme.colSpacing + boxH + theme.colSpacing
+                        sensorTGT = status.layoutBox4Param
+                    end
+                    if c == 5 then
+                        posX = 0 + theme.colSpacing + boxW
+                        posY = theme.colSpacing + boxH + theme.colSpacing
+                        sensorTGT = status.layoutBox5Param
+                    end
+                    if c == 6 then
+                        posX = 0 + theme.colSpacing + boxW + theme.colSpacing + boxW
+                        posY = theme.colSpacing + boxH + theme.colSpacing
+                        sensorTGT = status.layoutBox6Param
+                    end
+
+                    -- remap sensorTGT
+                    if sensorTGT == 1 then sensorTGT = 'timer' end
+                    if sensorTGT == 2 then sensorTGT = 'voltage' end
+                    if sensorTGT == 3 then sensorTGT = 'fuel' end
+                    if sensorTGT == 4 then sensorTGT = 'current' end
+                    if sensorTGT == 17 then sensorTGT = 'mah' end
+                    if sensorTGT == 5 then sensorTGT = 'rpm' end
+                    if sensorTGT == 6 then sensorTGT = 'rssi' end
+                    if sensorTGT == 7 then sensorTGT = 'temp_esc' end
+                    if sensorTGT == 8 then sensorTGT = 'temp_mcu' end
+                    if sensorTGT == 9 then sensorTGT = 'image' end
+                    if sensorTGT == 10 then sensorTGT = 'governor' end
+                    if sensorTGT == 11 then sensorTGT = 'image__gov' end
+                    if sensorTGT == 12 then sensorTGT = 'rssi__timer' end
+                    if sensorTGT == 13 then sensorTGT = 'temp_esc__temp_mcu' end
+                    if sensorTGT == 14 then sensorTGT = 'voltage__fuel' end
+                    if sensorTGT == 15 then sensorTGT = 'voltage__current' end
+                    if sensorTGT == 16 then sensorTGT = 'voltage__mah' end
+                    if sensorTGT == 20 then sensorTGT = 'rssi_timer_temp_esc_temp_mcu' end
+                    if sensorTGT == 21 then sensorTGT = 'max_current' end
+                    if sensorTGT == 22 then sensorTGT = 'lq__gov' end
+
+                    -- set sensor values based on sensorTGT
                     if status.sensordisplay[sensorTGT] ~= nil then
+                        -- all std values.  =
                         sensorVALUE = status.sensordisplay[sensorTGT]['value']
                         sensorUNIT = status.sensordisplay[sensorTGT]['unit']
                         sensorMIN = status.sensordisplay[sensorTGT]['min']
                         sensorMAX = status.sensordisplay[sensorTGT]['max']
                         sensorWARN = status.sensordisplay[sensorTGT]['warn']
                         sensorTITLE = status.sensordisplay[sensorTGT]['title']
+                        status.telemetryBox(posX, posY, boxW, boxH, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+                    else
 
-                        smallBOX = true
-                        status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+                        if sensorTGT == 'image' then
+                            -- IMAGE
+                            if status.gfx_model ~= nil then
+                                status.telemetryBoxImage(posX, posY, boxW, boxH, status.gfx_model)
+                            else
+                                status.telemetryBoxImage(posX, posY, boxW, boxH, status.gfx_heli)
+                            end
+                        end
+
+                        if sensorTGT == 'image__gov' then
+                            -- IMAGE + GOVERNOR
+                            if status.gfx_model ~= nil then
+                                status.telemetryBoxImage(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), status.gfx_model)
+                            else
+                                status.telemetryBoxImage(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), status.gfx_heli)
+                            end
+
+                            sensorTGT = "governor"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'lq__gov' then
+                            -- LQ + GOV
+                            sensorTGT = "rssi"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "governor"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'rssi__timer' then
+
+                            sensorTGT = "rssi"
+                            if status.sensordisplay[sensorTGT] ~= nil then
+                                sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                                sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                                sensorMIN = status.sensordisplay[sensorTGT]['min']
+                                sensorMAX = status.sensordisplay[sensorTGT]['max']
+                                sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                                sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                                smallBOX = true
+                                status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+                            end
+
+                            sensorTGT = "timer"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'temp_esc__temp_mcu' then
+
+                            sensorTGT = "temp_esc"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "temp_mcu"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'voltage__fuel' then
+
+                            sensorTGT = "voltage"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "fuel"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'voltage__current' then
+
+                            sensorTGT = "voltage"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "current"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'voltage__mah' then
+
+                            sensorTGT = "voltage"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "mah"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'rssi_timer_temp_esc_temp_mcu' then
+
+                            sensorTGT = "rssi"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY, boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
+                                                   sensorMAX)
+
+                            sensorTGT = "timer"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX + boxW / 2 + (theme.colSpacing / 2), posY, boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT,
+                                                   smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "temp_esc"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW / 2 - (theme.colSpacing / 2), boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT,
+                                                   smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                            sensorTGT = "temp_mcu"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            smallBOX = true
+                            status.telemetryBox(posX + boxW / 2 + (theme.colSpacing / 2), posY + boxH / 2 + (theme.colSpacing / 2), boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2),
+                                                   sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
+
+                        end
+
+                        if sensorTGT == 'max_current' then
+
+                            sensorTGT = "current"
+                            sensorVALUE = status.sensordisplay[sensorTGT]['value']
+                            sensorUNIT = status.sensordisplay[sensorTGT]['unit']
+                            sensorMIN = status.sensordisplay[sensorTGT]['min']
+                            sensorMAX = status.sensordisplay[sensorTGT]['max']
+                            sensorWARN = status.sensordisplay[sensorTGT]['warn']
+                            sensorTITLE = status.sensordisplay[sensorTGT]['title']
+
+                            if sensorMAX == "-" or sensorMAX == nil then sensorMAX = 0 end
+
+                            smallBOX = false
+                            status.telemetryBox(posX, posY, boxW, boxH, "MAX " .. sensorTITLE, sensorMAX, sensorUNIT, smallBOX)
+
+                        end
+
                     end
 
-                    sensorTGT = "timer"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
+                    c = c + 1
                 end
 
-                if sensorTGT == 'temp_esc__temp_mcu' then
+                if status.linkUP == false and environment.simulation == false then status.noTelem() end
 
-                    sensorTGT = "temp_esc"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "temp_mcu"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
-                end
-
-                if sensorTGT == 'voltage__fuel' then
-
-                    sensorTGT = "voltage"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "fuel"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
-                end
-
-                if sensorTGT == 'voltage__current' then
-
-                    sensorTGT = "voltage"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "current"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
-                end
-
-                if sensorTGT == 'voltage__mah' then
-
-                    sensorTGT = "voltage"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW, boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "mah"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW, boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
-                end
-
-                if sensorTGT == 'rssi_timer_temp_esc_temp_mcu' then
-
-                    sensorTGT = "rssi"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY, boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN,
-                                           sensorMAX)
-
-                    sensorTGT = "timer"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX + boxW / 2 + (theme.colSpacing / 2), posY, boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2), sensorTITLE, sensorVALUE, sensorUNIT,
-                                           smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "temp_esc"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX, posY + boxH / 2 + (theme.colSpacing / 2), boxW / 2 - (theme.colSpacing / 2), boxH / 2 - theme.colSpacing / 2, sensorTITLE, sensorVALUE, sensorUNIT,
-                                           smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                    sensorTGT = "temp_mcu"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    smallBOX = true
-                    status.telemetryBox(posX + boxW / 2 + (theme.colSpacing / 2), posY + boxH / 2 + (theme.colSpacing / 2), boxW / 2 - (theme.colSpacing / 2), boxH / 2 - (theme.colSpacing / 2),
-                                           sensorTITLE, sensorVALUE, sensorUNIT, smallBOX, sensorWARN, sensorMIN, sensorMAX)
-
-                end
-
-                if sensorTGT == 'max_current' then
-
-                    sensorTGT = "current"
-                    sensorVALUE = status.sensordisplay[sensorTGT]['value']
-                    sensorUNIT = status.sensordisplay[sensorTGT]['unit']
-                    sensorMIN = status.sensordisplay[sensorTGT]['min']
-                    sensorMAX = status.sensordisplay[sensorTGT]['max']
-                    sensorWARN = status.sensordisplay[sensorTGT]['warn']
-                    sensorTITLE = status.sensordisplay[sensorTGT]['title']
-
-                    if sensorMAX == "-" or sensorMAX == nil then sensorMAX = 0 end
-
-                    smallBOX = false
-                    status.telemetryBox(posX, posY, boxW, boxH, "MAX " .. sensorTITLE, sensorMAX, sensorUNIT, smallBOX)
-
-                end
+                if status.showLOGS ~= nil then if status.showLOGS then status.logsBOX() end end
 
             end
-
-            c = c + 1
-        end
-
-        if status.linkUP == 0 then status.noTelem() end
-
-        if status.showLOGS ~= nil then if status.showLOGS then status.logsBOX() end end
-
-    end
-
+     end
 
 end
 
@@ -2710,7 +2703,7 @@ function status.getSensors()
             end
         end
 
-    elseif status.linkUP ~= 0 then
+    elseif status.linkUP == true then
 
 
                 -- get sensors
@@ -3049,6 +3042,17 @@ function status.getSensors()
                         mah = 0
                     end
 
+                        if rssiSOURCE ~= nil then
+                            rssi = rssiSOURCE:value()
+                            if rssi ~= nil then
+                                rssi = rssi
+                            else
+                                rssi = 0
+                            end
+                        else
+                            rssi = 0
+                        end
+
                     if govSOURCE ~= nil then
                         govId = govSOURCE:value()
 
@@ -3071,7 +3075,6 @@ function status.getSensors()
 
                     if adjVALUE ~= nil then adjvalue = adjVALUE:value() end
 
-                    rssi = status.linkUP
 
 
                 end
@@ -3080,7 +3083,7 @@ function status.getSensors()
                 -- we have no link.  do something
                 -- print("NO LINK")
                 -- keep looking for new sensor
-                status.rssiSensor = status.getRssiSensor()
+
 
                 voltage = 0
                 rpm = 0
@@ -3091,7 +3094,7 @@ function status.getSensors()
                 mah = 0
                 govmode = "-"
                 fm = "-"
-                rssi = status.linkUP
+                rssi = 0
                 adjsource = 0
                 adjvalue = 0
                 
@@ -3261,7 +3264,7 @@ end
 
 function status.sensorsMAXMIN(sensors)
 
-    if status.linkUP ~= 0 and status.theTIME ~= nil and status.idleupdelayParam ~= nil then
+    if status.linkUP == true and status.theTIME ~= nil and status.idleupdelayParam ~= nil then
 
         -- hold back - to early to get a reading
         if status.theTIME <= status.idleupdelayParam then
@@ -3638,6 +3641,7 @@ function status.read()
     status.minCellVoltage = storage.read("mem69")
     status.warnCellVoltage = storage.read("mem79")
 
+    if status.statusColorParam == nil then status.statusColorParam = 2 end
 
     if status.alertonParam == nil then status.alertonParam = 2 end
 
@@ -4281,285 +4285,293 @@ function status.wakeup(widget)
 end
 
 function status.wakeupUI(widget)
-    status.refresh = false
 
-    status.linkUP = status.getRSSI()
-    status.sensors = status.getSensors()
+    if not rfsuite.bg.active() then
+        return
+    else
 
-    if status.refresh == true then
-        status.sensorsMAXMIN(status.sensors)
-        lcd.invalidate()
-    end
-
-    if status.linkUP == 0 then status.linkUPTime = os.clock() end
-
-    if status.linkUP ~= 0 then
-
-        if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 5) then
-            -- voltage alerts
-            status.playVoltage(widget)
-            -- governor callouts
-            status.playGovernor(widget)
-            -- rpm diff
-            status.playRPMDiff(widget)
-            -- rpm
-            status.playRPM(widget)
-            -- current
-            status.playCurrent(widget)
-            -- fuel
-            status.playFuel(widget)
-            -- lq
-            status.playLQ(widget)
-            -- esc
-            status.playESC(widget)
-            -- mcu
-            status.playMCU(widget)
-            -- timer
-            status.playTIMER(widget)
-            -- timer alarm
-            status.playTIMERALARM(widget)
+            status.refresh = false
 
 
-            if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 10) then
-
-                -- IDLE
-                if status.switchIdlelowParam ~= nil and status.switchIdlelowParam:state() == true then
-                    if status.switchstatus.idlelow == nil or status.switchstatus.idlelow == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-l.wav")
-                        status.switchstatus.idlelow = true
-                        status.switchstatus.idlemedium = false
-                        status.switchstatus.idlehigh = false
-                    end
-                else
-                    status.switchstatus.idlelow = false
-                end
-                if status.switchIdlemediumParam ~= nil and status.switchIdlemediumParam:state() == true then
-                    if status.switchstatus.idlemedium == nil or status.switchstatus.idlemedium == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-m.wav")
-                        status.switchstatus.idlelow = false
-                        status.switchstatus.idlemedium = true
-                        status.switchstatus.idlehigh = false
-                    end
-                else
-                    status.switchstatus.idlemedium = false
-                end
-                if status.switchIdlehighParam ~= nil and status.switchIdlehighParam:state() == true then
-                    if status.switchstatus.idlehigh == nil or status.switchstatus.idlehigh == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-h.wav")
-                        status.switchstatus.idlelow = false
-                        status.switchstatus.idlemedium = false
-                        status.switchstatus.idlehigh = true
-                    end
-                else
-                    status.switchstatus.idlehigh = false
-                end
-
-                -- RATES
-                if status.switchrateslowParam ~= nil and status.switchrateslowParam:state() == true then
-                    if status.switchstatus.rateslow == nil or status.switchstatus.rateslow == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-l.wav")
-                        status.switchstatus.rateslow = true
-                        status.switchstatus.ratesmedium = false
-                        status.switchstatus.rateshigh = false
-                    end
-                else
-                    status.switchstatus.rateslow = false
-                end
-                if status.switchratesmediumParam ~= nil and status.switchratesmediumParam:state() == true then
-                    if status.switchstatus.ratesmedium == nil or status.switchstatus.ratesmedium == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-m.wav")
-                        status.switchstatus.rateslow = false
-                        status.switchstatus.ratesmedium = true
-                        status.switchstatus.rateshigh = false
-                    end
-                else
-                    status.switchstatus.ratesmedium = false
-                end
-                if status.switchrateshighParam ~= nil and status.switchrateshighParam:state() == true then
-                    if status.switchstatus.rateshigh == nil or status.switchstatus.rateshigh == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-h.wav")
-                        status.switchstatus.rateslow = false
-                        status.switchstatus.ratesmedium = false
-                        status.switchstatus.rateshigh = true
-                    end
-                else
-                    status.switchstatus.rateshigh = false
-                end
-
-                -- RESCUE
-                if status.switchrescueonParam ~= nil and status.switchrescueonParam:state() == true then
-                    if status.switchstatus.rescueon == nil or status.switchstatus.rescueon == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/rescue-on.wav")
-                        status.switchstatus.rescueon = true
-                        status.switchstatus.rescueoff = false
-                    end
-                else
-                    status.switchstatus.rescueon = false
-                end
-                if status.switchrescueoffParam ~= nil and status.switchrescueoffParam:state() == true then
-                    if status.switchstatus.rescueoff == nil or status.switchstatus.rescueoff == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/rescue-off.wav")
-                        status.switchstatus.rescueon = false
-                        status.switchstatus.rescueoff = true
-                    end
-                else
-                    status.switchstatus.rescueoff = false
-                end
-
-                -- BBL
-                if status.switchbblonParam ~= nil and status.switchbblonParam:state() == true then
-                    if status.switchstatus.bblon == nil or status.switchstatus.bblon == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/bbl-on.wav")
-                        status.switchstatus.bblon = true
-                        status.switchstatus.bbloff = false
-                    end
-                else
-                    status.switchstatus.bblon = false
-                end
-                if status.switchbbloffParam ~= nil and status.switchbbloffParam:state() == true then
-                    if status.switchstatus.bbloff == nil or status.switchstatus.bbloff == false then
-                        system.playFile(suiteDir .. "widgets/status/sounds/switches/bbl-off.wav")
-                        status.switchstatus.bblon = false
-                        status.switchstatus.bbloff = true
-                    end
-                else
-                    status.switchstatus.bbloff = false
-                end
-
-            end
+            status.linkUP = rfsuite.bg.telemetry.active()
+            status.sensors = status.getSensors()
             
-            
-            ---
-            -- TIME
-            if status.linkUP ~= 0 then
-                if armswitchParam ~= nil then
-                    if armswitchParam:state() == false then
-                        status.stopTimer = true
-                        stopTIME = os.clock()
-                        timerNearlyActive = 1
-                        status.theTIME = 0
-                    end
-                end
 
-                if status.idleupswitchParam ~= nil then
-                    if status.idleupswitchParam:state() then
-                        if timerNearlyActive == 1 then
-                            timerNearlyActive = 0
-                            startTIME = os.clock()
-                        end
-                        if startTIME ~= nil then 
-                            status.theTIME = os.clock() - startTIME 
-                        end
-                    end
-                end
-
+            if status.refresh == true then
+                status.sensorsMAXMIN(status.sensors)
+                lcd.invalidate()
             end
 
-            -- LOW FUEL ALERTS
-            -- big conditional to announcement status.lfTimer if needed
-            if status.linkUP ~= 0 then
-                if status.idleupswitchParam ~= nil then
-                    if status.idleupswitchParam:state() then
+            if status.linkUP == false then status.linkUPTime = os.clock() end
+
+            if status.linkUP == true then
+
+                if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 5) then
+                    -- voltage alerts
+                    status.playVoltage(widget)
+                    -- governor callouts
+                    status.playGovernor(widget)
+                    -- rpm diff
+                    status.playRPMDiff(widget)
+                    -- rpm
+                    status.playRPM(widget)
+                    -- current
+                    status.playCurrent(widget)
+                    -- fuel
+                    status.playFuel(widget)
+                    -- lq
+                    status.playLQ(widget)
+                    -- esc
+                    status.playESC(widget)
+                    -- mcu
+                    status.playMCU(widget)
+                    -- timer
+                    status.playTIMER(widget)
+                    -- timer alarm
+                    status.playTIMERALARM(widget)
+
+
+                    if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 10) then
+
+                        -- IDLE
+                        if status.switchIdlelowParam ~= nil and status.switchIdlelowParam:state() == true then
+                            if status.switchstatus.idlelow == nil or status.switchstatus.idlelow == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-l.wav")
+                                status.switchstatus.idlelow = true
+                                status.switchstatus.idlemedium = false
+                                status.switchstatus.idlehigh = false
+                            end
+                        else
+                            status.switchstatus.idlelow = false
+                        end
+                        if status.switchIdlemediumParam ~= nil and status.switchIdlemediumParam:state() == true then
+                            if status.switchstatus.idlemedium == nil or status.switchstatus.idlemedium == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-m.wav")
+                                status.switchstatus.idlelow = false
+                                status.switchstatus.idlemedium = true
+                                status.switchstatus.idlehigh = false
+                            end
+                        else
+                            status.switchstatus.idlemedium = false
+                        end
+                        if status.switchIdlehighParam ~= nil and status.switchIdlehighParam:state() == true then
+                            if status.switchstatus.idlehigh == nil or status.switchstatus.idlehigh == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/idle-h.wav")
+                                status.switchstatus.idlelow = false
+                                status.switchstatus.idlemedium = false
+                                status.switchstatus.idlehigh = true
+                            end
+                        else
+                            status.switchstatus.idlehigh = false
+                        end
+
+                        -- RATES
+                        if status.switchrateslowParam ~= nil and status.switchrateslowParam:state() == true then
+                            if status.switchstatus.rateslow == nil or status.switchstatus.rateslow == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-l.wav")
+                                status.switchstatus.rateslow = true
+                                status.switchstatus.ratesmedium = false
+                                status.switchstatus.rateshigh = false
+                            end
+                        else
+                            status.switchstatus.rateslow = false
+                        end
+                        if status.switchratesmediumParam ~= nil and status.switchratesmediumParam:state() == true then
+                            if status.switchstatus.ratesmedium == nil or status.switchstatus.ratesmedium == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-m.wav")
+                                status.switchstatus.rateslow = false
+                                status.switchstatus.ratesmedium = true
+                                status.switchstatus.rateshigh = false
+                            end
+                        else
+                            status.switchstatus.ratesmedium = false
+                        end
+                        if status.switchrateshighParam ~= nil and status.switchrateshighParam:state() == true then
+                            if status.switchstatus.rateshigh == nil or status.switchstatus.rateshigh == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/rates-h.wav")
+                                status.switchstatus.rateslow = false
+                                status.switchstatus.ratesmedium = false
+                                status.switchstatus.rateshigh = true
+                            end
+                        else
+                            status.switchstatus.rateshigh = false
+                        end
+
+                        -- RESCUE
+                        if status.switchrescueonParam ~= nil and status.switchrescueonParam:state() == true then
+                            if status.switchstatus.rescueon == nil or status.switchstatus.rescueon == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/rescue-on.wav")
+                                status.switchstatus.rescueon = true
+                                status.switchstatus.rescueoff = false
+                            end
+                        else
+                            status.switchstatus.rescueon = false
+                        end
+                        if status.switchrescueoffParam ~= nil and status.switchrescueoffParam:state() == true then
+                            if status.switchstatus.rescueoff == nil or status.switchstatus.rescueoff == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/rescue-off.wav")
+                                status.switchstatus.rescueon = false
+                                status.switchstatus.rescueoff = true
+                            end
+                        else
+                            status.switchstatus.rescueoff = false
+                        end
+
+                        -- BBL
+                        if status.switchbblonParam ~= nil and status.switchbblonParam:state() == true then
+                            if status.switchstatus.bblon == nil or status.switchstatus.bblon == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/bbl-on.wav")
+                                status.switchstatus.bblon = true
+                                status.switchstatus.bbloff = false
+                            end
+                        else
+                            status.switchstatus.bblon = false
+                        end
+                        if status.switchbbloffParam ~= nil and status.switchbbloffParam:state() == true then
+                            if status.switchstatus.bbloff == nil or status.switchstatus.bbloff == false then
+                                system.playFile(suiteDir .. "widgets/status/sounds/switches/bbl-off.wav")
+                                status.switchstatus.bblon = false
+                                status.switchstatus.bbloff = true
+                            end
+                        else
+                            status.switchstatus.bbloff = false
+                        end
+
+                    end
                     
-                        if (status.sensors.fuel <= status.lowfuelParam and status.alertonParam == 1) then
-                            status.lfTimer = true
-                        elseif (status.sensors.fuel <= status.lowfuelParam and status.alertonParam == 2) then
-                            status.lfTimer = true
+                    
+                    ---
+                    -- TIME
+                    if status.linkUP == true then
+                        if armswitchParam ~= nil then
+                            if armswitchParam:state() == false then
+                                status.stopTimer = true
+                                stopTIME = os.clock()
+                                timerNearlyActive = 1
+                                status.theTIME = 0
+                            end
+                        end
+
+                        if status.idleupswitchParam ~= nil then
+                            if status.idleupswitchParam:state() then
+                                if timerNearlyActive == 1 then
+                                    timerNearlyActive = 0
+                                    startTIME = os.clock()
+                                end
+                                if startTIME ~= nil then 
+                                    status.theTIME = os.clock() - startTIME 
+                                end
+                            end
+                        end
+
+                    end
+
+                    -- LOW FUEL ALERTS
+                    -- big conditional to announcement status.lfTimer if needed
+                    if status.linkUP == true then
+                        if status.idleupswitchParam ~= nil then
+                            if status.idleupswitchParam:state() then
+                            
+                                if (status.sensors.fuel <= status.lowfuelParam and status.alertonParam == 1) then
+                                    status.lfTimer = true
+                                elseif (status.sensors.fuel <= status.lowfuelParam and status.alertonParam == 2) then
+                                    status.lfTimer = true
+                                else
+                                    status.lfTimer = false
+                                end
+                            else
+                                status.lfTimer = false
+                            end
                         else
                             status.lfTimer = false
                         end
                     else
                         status.lfTimer = false
                     end
-                else
-                    status.lfTimer = false
-                end
-            else
-                status.lfTimer = false
-            end
 
 
-            if status.lfTimer == true then
-                -- start timer
-                if status.lfTimerStart == nil then status.lfTimerStart = os.time() end
-            else
-                status.lfTimerStart = nil
-            end
-
-            if status.lfTimerStart ~= nil then
-                -- only announcement if we have been on for 5 seconds or more
-                if (tonumber(os.clock()) - tonumber(status.lfAudioAlertCounter)) >= status.alertintParam then
-                    status.lfAudioAlertCounter = os.clock()
-
-                    if status.sensors.fuel >= 10 then
-                        system.playFile(suiteDir .. "widgets/status/sounds/alerts/lowfuel.wav")
-
-                        -- system.playNumber(status.sensors.voltage / 100, 2, 2)
-                        if alrthptParam == true then system.playHaptic("- . -") end
+                    if status.lfTimer == true then
+                        -- start timer
+                        if status.lfTimerStart == nil then status.lfTimerStart = os.time() end
+                    else
+                        status.lfTimerStart = nil
                     end
-                end
-            else
-                -- stop timer
-                status.lfTimerStart = nil
-            end
 
-            -- LOW VOLTAGE ALERTS
-            -- big conditional to announcement status.lvTimer if needed
-            if status.linkUP ~= 0 then
+                    if status.lfTimerStart ~= nil then
+                        -- only announcement if we have been on for 5 seconds or more
+                        if (tonumber(os.clock()) - tonumber(status.lfAudioAlertCounter)) >= status.alertintParam then
+                            status.lfAudioAlertCounter = os.clock()
 
-                if status.idleupswitchParam ~= nil then
-                    if status.idleupswitchParam:state() then
-                        if (status.voltageIsLow and status.alertonParam == 0) then
-                            status.lvTimer = true
-                        elseif (status.voltageIsLow and status.alertonParam == 2) then
-                            status.lvTimer = true
+                            if status.sensors.fuel >= 10 then
+                                system.playFile(suiteDir .. "widgets/status/sounds/alerts/lowfuel.wav")
+
+                                -- system.playNumber(status.sensors.voltage / 100, 2, 2)
+                                if alrthptParam == true then system.playHaptic("- . -") end
+                            end
+                        end
+                    else
+                        -- stop timer
+                        status.lfTimerStart = nil
+                    end
+
+                    -- LOW VOLTAGE ALERTS
+                    -- big conditional to announcement status.lvTimer if needed
+                    if status.linkUP == true then
+
+                        if status.idleupswitchParam ~= nil then
+                            if status.idleupswitchParam:state() then
+                                if (status.voltageIsLow and status.alertonParam == 0) then
+                                    status.lvTimer = true
+                                elseif (status.voltageIsLow and status.alertonParam == 2) then
+                                    status.lvTimer = true
+                                else
+                                    status.lvTimer = false
+                                end
+                            else
+                                status.lvTimer = false
+                            end
                         else
                             status.lvTimer = false
                         end
                     else
                         status.lvTimer = false
                     end
-                else
-                    status.lvTimer = false
-                end
-            else
-                status.lvTimer = false
-            end
 
-            if status.lvTimer == true then
-                -- start timer
-                if status.lvTimerStart == nil then status.lvTimerStart = os.time() end
-            else
-                status.lvTimerStart = nil
-            end
-
-            if status.lvTimerStart ~= nil then
-                if (os.time() - status.lvTimerStart >= status.sagParam) then
-                    -- only announcement if we have been on for 5 seconds or more
-                    if (tonumber(os.clock()) - tonumber(status.lvAudioAlertCounter)) >= status.alertintParam then
-                        status.lvAudioAlertCounter = os.clock()
-
-                        if status.lvStickannouncement == false and status.voltageIsLowAlert == true then -- do not play if sticks at high end points
-                            system.playFile(suiteDir .. "widgets/status/sounds/alerts/lowvoltage.wav")
-                            -- system.playNumber(status.sensors.voltage / 100, 2, 2)
-                            if alrthptParam == true then system.playHaptic("- . -") end
-                        else
-                            -- print("Alarm supressed due to stick positions")
-                        end
-
+                    if status.lvTimer == true then
+                        -- start timer
+                        if status.lvTimerStart == nil then status.lvTimerStart = os.time() end
+                    else
+                        status.lvTimerStart = nil
                     end
+
+                    if status.lvTimerStart ~= nil then
+                        if (os.time() - status.lvTimerStart >= status.sagParam) then
+                            -- only announcement if we have been on for 5 seconds or more
+                            if (tonumber(os.clock()) - tonumber(status.lvAudioAlertCounter)) >= status.alertintParam then
+                                status.lvAudioAlertCounter = os.clock()
+
+                                if status.lvStickannouncement == false and status.voltageIsLowAlert == true then -- do not play if sticks at high end points
+                                    system.playFile(suiteDir .. "widgets/status/sounds/alerts/lowvoltage.wav")
+                                    -- system.playNumber(status.sensors.voltage / 100, 2, 2)
+                                    if alrthptParam == true then system.playHaptic("- . -") end
+                                else
+                                    -- print("Alarm supressed due to stick positions")
+                                end
+
+                            end
+                        end
+                    else
+                        -- stop timer
+                        status.lvTimerStart = nil
+                    end            
+                    ---
+
+                else
+                    status.adjJUSTUP = true
                 end
-            else
-                -- stop timer
-                status.lvTimerStart = nil
-            end            
-            ---
-
-        else
-            status.adjJUSTUP = true
-        end
+            end
+            
     end
-
     return
 end
 

@@ -11,8 +11,8 @@ sensors.sport = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/spor
 
 function sensors.wakeup()
 
-        -- we cant do anything if backgroundMsp is not active - so kill
-        if rfsuite.bg.msp.backgroundMsp ~= true then
+        -- we cant do anything if bg task not running
+        if not rfsuite.bg.active() then 
                 return
         end
         

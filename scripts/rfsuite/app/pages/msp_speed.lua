@@ -338,9 +338,11 @@ end
 local function wakeup()
 
 
-        -- kill if we loose link
-        if rfsuite.bg.telemetry.active() == false and startTest == true then
-                testLoader:close()
+        -- kill if we loose link - but not in sim mode
+        if rfsuite.bg.telemetry.active() == false and startTest == true and system:getVersion().simulation ~= true then
+                if testLoader then
+                        testLoader:close()
+                end
                 startTest = false
         end
 
@@ -348,6 +350,18 @@ local function wakeup()
                 rfsuite.app.triggers.closeProgressLoader = true
                 formLoaded = false
         end
+        
+        --[[
+        if testLoader == false then
+                print("here")
+                mspSpeedTest = false
+                startTest = false
+                testLoaderDisplay = false
+                startTestTime = os.clock()
+                startTestLength = 0          
+                triggerStart  = false               
+        end
+        ]]--
 
         if triggerStart == true then
                 local buttons = {
@@ -474,7 +488,6 @@ local function wakeup()
                         if doNextMsp == true then
                                 doNextMsp = false
                                 getMSP()
-                                collectgarbage()
                         end        
                 end
 
@@ -508,9 +521,11 @@ function close()
                 startTest = false
         end        
         
+        
+        
 end
 
-rfsuite.app.uiState = rfsuite.app.uiStatus.pages
+
 
 
 

@@ -7,6 +7,20 @@ rf2gov.refresh = true
 rf2gov.environment = system.getVersion()
 rf2gov.oldsensors = {"govmode"}
 rf2gov.wakeupSchedulerUI = os.clock()
+
+local governorMap = {}
+governorMap[0] = "OFF"
+governorMap[1] = "IDLE"
+governorMap[2] = "SPOOLUP"
+governorMap[3] = "RECOVERY"
+governorMap[4] = "ACTIVE"
+governorMap[5] = "THR-OFF"
+governorMap[6] = "LOST-HS"
+governorMap[7] = "AUTOROT"
+governorMap[8] = "BAILOUT"
+governorMap[100] = "DISABLED"
+governorMap[101] = "DISARMED"
+
 local sensors
 
 function rf2gov.sensorMakeNumber(x)
@@ -28,7 +42,12 @@ function rf2gov.paint(widget)
     local w, h = lcd.getWindowSize()
 
     lcd.font(FONT_XXL)
-    str = sensors.govmode
+    
+    if rfsuite.bg.active() then
+        str = sensors.govmode
+    else
+        str  = "BG TASK DISABLED"
+    end
     tsizeW, tsizeH = lcd.getTextSize(str)
 
     offsetY = 5
@@ -42,79 +61,38 @@ end
 
 function rf2gov.getSensors()
 
-    if rf2gov.environment.simulation == true then
-        govmode = "DISABLED"
-    else
-        if system.getSource("Rx RSSI1") ~= nil then
-            -- we are running crsf
-            local crsfSOURCE = system.getSource("*Cnt")
-            if crsfSOURCE ~= nil then
-                -- crsf passthru
-                govId = system.getSource("Gov"):value()
-                if govId == 0 then
-                    govmode = "OFF"
-                elseif govId == 1 then
-                    govmode = "IDLE"
-                elseif govId == 2 then
-                    govmode = "SPOOLUP"
-                elseif govId == 3 then
-                    govmode = "RECOVERY"
-                elseif govId == 4 then
-                    govmode = "ACTIVE"
-                elseif govId == 5 then
-                    govmode = "THR-OFF"
-                elseif govId == 6 then
-                    govmode = "LOST-HS"
-                elseif govId == 7 then
-                    govmode = "AUTOROT"
-                elseif govId == 8 then
-                    govmode = "BAILOUT"
-                elseif govId == 100 then
-                    govmode = "DISABLED"
-                elseif govId == 101 then
-                    govmode = "DISARMED"
-                else
-                    govmode = "UNKNOWN"
-                end
-            else
-                if system.getSource("Flight mode") ~= nil then govmode = system.getSource("Flight mode"):stringValue() end
-            end
-        else
-            -- we are run sport
-            if system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5450}) ~= nil then
-                govId = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5450}):stringValue()
-                govId = rf2gov.sensorMakeNumber(govId)
-                -- print(govId)
-                if govId == 0 then
-                    govmode = "OFF"
-                elseif govId == 1 then
-                    govmode = "IDLE"
-                elseif govId == 2 then
-                    govmode = "SPOOLUP"
-                elseif govId == 3 then
-                    govmode = "RECOVERY"
-                elseif govId == 4 then
-                    govmode = "ACTIVE"
-                elseif govId == 5 then
-                    govmode = "THR-OFF"
-                elseif govId == 6 then
-                    govmode = "LOST-HS"
-                elseif govId == 7 then
-                    govmode = "AUTOROT"
-                elseif govId == 8 then
-                    govmode = "BAILOUT"
-                elseif govId == 100 then
-                    govmode = "DISABLED"
-                elseif govId == 101 then
-                    govmode = "DISARMED"
-                else
-                    govmode = "UNKNOWN"
-                end
-            else
-                govmode = ""
-            end
+        if rfsuite.bg.active() == false then
+                return
         end
-    end
+       
+            if rf2gov.environment.simulation == true then
+                govmode = "DISABLED"
+            else
+         
+         
+                govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")
+         
+         
+                if rfsuite.bg.telemetry.getSensorProtocol() == 'lcrsf' then
+                        if govSOURCE ~= nil then govmode = govSOURCE:stringValue() end        
+                else
+                
+                         if govSOURCE ~= nil then
+                            govId = govSOURCE:value()
+
+                            if governorMap[govId] == nil then
+                                govmode = "UNKNOWN"
+                            else
+                                govmode = governorMap[govId]
+                            end
+
+                        else
+                            govmode = ""
+                        end
+                
+                end
+         
+            end
 
     if rf2gov.oldsensors.govmode ~= govmode then rf2gov.refresh = true end
 

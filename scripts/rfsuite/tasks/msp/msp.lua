@@ -9,7 +9,6 @@ msp = {}
 msp.init = true
 msp.activeProtocol = nil
 msp.onConnectChecksInit = true
-msp.backgroundMsp = false
 
 
 local rssiCheckScheduler = os.clock()
@@ -216,7 +215,6 @@ function msp.wakeup()
         else
                 msp.mspQueue:clear()
         end        
-        msp.backgroundMsp = true 
 end
 
 

@@ -9,9 +9,28 @@ local compile = arg[2]
 local bg = {}
 bg.init = true
 
+bg.heartbeat = nil
+
+function bg.active()
+
+        if bg.heartbeat == nil then
+                return false
+        end
+
+        if (os.clock() - bg.heartbeat) <= 1 then
+
+                return true
+        else
+                return false
+        end
+
+        
+end
 
 
 function bg.wakeup()
+
+        bg.heartbeat = os.clock()
 
         -- tasks dont have a create function
         -- so we handle this here with a loop that
@@ -47,6 +66,8 @@ function bg.event(widget, category, value)
                 bg.adjfunctions.event(widget, category, value)
         end
 end
+
+
 
 
 return bg
