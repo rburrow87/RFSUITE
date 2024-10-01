@@ -589,8 +589,8 @@ function app.wakeupUI()
         -- supress this one and display a different one as timeouts and process is different
         if app.triggers.telemetryState ~= 1 and app.triggers.disableRssiTimeout == false then
 
-                if app.dialogs.progress then app.ui.progessDisplayClose() end
-                if app.dialogs.save then app.ui.progessDisplaySaveClose() end
+                if rfsuite.app.dialogs.progressDisplay == true then app.ui.progessDisplayClose() end
+                if rfsuite.app.dialogs.saveDisplay == true then app.ui.progessDisplaySaveClose() end
 
                 if app.dialogs.nolinkDisplay == false then app.ui.progessNolinkDisplay() end
         end

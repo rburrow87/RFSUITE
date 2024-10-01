@@ -5,14 +5,14 @@ local formLoaded = false
 local triggerStart = false
 local startTest = false
 local startTestTime = os.clock()
-local startTestLength = 30
+local startTestLength = 0
 
 local testLoader
 local testLoaderDisplay = false
 local testLoaderUpdateRate = 2
 local testLoaderUpdateTime = os.clock()
-local testLoaderStepSize = 100 / (startTestLength / 2)
-local testLoaderStepSizeValue = 0
+local testLoaderStepSize 
+local testLoaderStepSizeValue
 
 local mspQueryStartTime
 local mspQueryTimeCount = 0
@@ -116,6 +116,13 @@ local function openPage(pidx, title, script)
                 end)
                 fields['total']:enable(false)
 
+                line['runtime'] = form.addLine("Test Length")
+                fields['runtime'] = form.addTextField(line['runtime'], nil, function()
+                        return startTestLength
+                end, function(value)
+                end)
+                fields['runtime']:enable(false)
+
                 line['success'] = form.addLine("Successful queries")
                 fields['success'] = form.addTextField(line['success'], nil, function()
                         return mspSpeedTestStats['success']
@@ -161,6 +168,9 @@ local function openPage(pidx, title, script)
                 line['memory'] = form.addLine("Memory free")
                 fields['memory'] = form.addStaticText(line['memory'], posText, rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB')
 
+                line['runtime'] = form.addLine("Test Length")
+                fields['runtime'] = form.addStaticText(line['runtime'], posText, "-")
+
                 line['total'] = form.addLine("Total queries")
                 fields['total'] = form.addStaticText(line['total'], posText, "-")
 
@@ -194,6 +204,13 @@ local function updateStats()
                 end, function(value)
                 end)
                 fields['memory']:enable(false)
+                
+
+                fields['runtime'] = form.addTextField(line['runtime'], nil, function()
+                        return startTestLength
+                end, function(value)
+                end)
+                fields['runtime']:enable(false)                
 
                 fields['total'] = form.addTextField(line['total'], nil, function()
                         return mspSpeedTestStats['total']
@@ -242,6 +259,8 @@ local function updateStats()
                 
 
         else
+
+                fields['runtime']:value(startTestLength)
 
                 fields['memory']:value(rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB')
         
@@ -318,6 +337,13 @@ end
 
 local function wakeup()
 
+
+        -- kill if we loose link
+        if rfsuite.bg.telemetry.active() == false and startTest == true then
+                testLoader:close()
+                startTest = false
+        end
+
         if formLoaded == true then
                 rfsuite.app.triggers.closeProgressLoader = true
                 formLoaded = false
@@ -326,14 +352,54 @@ local function wakeup()
         if triggerStart == true then
                 local buttons = {
                         {
-                                label = "                OK                ",
+                                label = "  600S  ",
                                 action = function()
                                         -- trigger test
+                                        startTestLength = 600
                                         startTestTime = os.clock()
+                                        testLoaderStepSize = 100 / (startTestLength / 2)
+                                        testLoaderStepSizeValue = 0                                        
                                         startTest = true
                                         return true
                                 end
-                        }, {
+                        }, 
+                        {
+                                label = "  300S  ",
+                                action = function()
+                                        -- trigger test
+                                        startTestLength = 300
+                                        startTestTime = os.clock()
+                                        testLoaderStepSize = 100 / (startTestLength / 2)
+                                        testLoaderStepSizeValue = 0                                            
+                                        startTest = true
+                                        return true
+                                end
+                        }, 
+                        {
+                                label = "  120S  ",
+                                action = function()
+                                        -- trigger test
+                                        startTestLength = 120
+                                        startTestTime = os.clock()
+                                        testLoaderStepSize = 100 / (startTestLength / 2)
+                                        testLoaderStepSizeValue = 0                                            
+                                        startTest = true
+                                        return true
+                                end
+                        },                         
+                        {
+                                label = "  30S  ",
+                                action = function()
+                                        -- trigger test
+                                        startTestLength = 30
+                                        startTestTime = os.clock()
+                                        testLoaderStepSize = 100 / (startTestLength / 2)
+                                        testLoaderStepSizeValue = 0                                            
+                                        startTest = true
+                                        return true
+                                end
+                        }, 
+                        {
                                 label = "CANCEL",
                                 action = function()
                                         return true
@@ -343,7 +409,7 @@ local function wakeup()
                 form.openDialog({
                         width = nil,
                         title = "Start",
-                        message = "Would you like to start the test?  It will take " .. startTestLength .. "s to complete.",
+                        message = "Would you like to start the test?  Choose the test run time below.",
                         buttons = buttons,
                         wakeup = function()
                         end,
@@ -435,8 +501,17 @@ function mspChecksum(self)
         if mspSpeedTest == true then mspSpeedTestStats['checksum'] = mspSpeedTestStats['checksum'] + 1 end
 end
 
+function close()
+
+        if startTest == true then
+                testLoader:close()
+                startTest = false
+        end        
+        
+end
+
 rfsuite.app.uiState = rfsuite.app.uiStatus.pages
 
 
 
-return {title = title, openPage = openPage, mspRetry = mspRetry, mspSuccess = mspSuccess, mspTimeout = mspTimeout, mspChecksum = mspChecksum, wakeup = wakeup, event = event}
+return {title = title, openPage = openPage, mspRetry = mspRetry, mspSuccess = mspSuccess, mspTimeout = mspTimeout, mspChecksum = mspChecksum, wakeup = wakeup, event = event, close = close}
