@@ -4,7 +4,7 @@ local config = {}
 -- LuaFormatter off
 config.toolName = "ROTORFLIGHT"                                         -- name of the tool
 config.suiteDir = "/scripts/rfsuite/"                                -- base path the script is installed into
-config.Version = "0.0.1"                                            -- version number of this software release
+config.Version = "1.0.0"                                            -- version number of this software release
 config.logEnable = false                                            -- will log to: /scripts/rfsuite/rfsuite.log
 config.logEnableScreen = false                                      -- if config.logEnable is true then also print to screen
 config.mspTxRxDebug = false                                         -- simple print of full msp payload that is sent and received
@@ -13,9 +13,9 @@ config.ethosVersion = 1515                                          -- min versi
 config.ethosVersionString = "ETHOS < V1.5.15"                       -- string to print if ethos version error occurs
 config.defaultRateTable = 4 -- ACTUAL                               -- default rate table - typically this will be ACTUAL, but can be changed if user always uses a different one
 config.supportedMspApiVersion = {"12.06", "12.07"}                  -- supported msp versions
-config.simulateOnTransmitter = false                                -- make the transmitter run as if its running in the SIM (no fbl required)
 config.skipRssiSensorCheck = false                                  -- skip checking for a valid signal when loading connecting to the fbl
-config.icon = lcd.loadMask(config.suiteDir .. "app/gfx/icon.png")        -- icon
+config.icon = lcd.loadMask(config.suiteDir .. "app/gfx/icon.png")   -- icon
+config.watchdogParam = 10                                           -- watchdog timeout for progress boxes
 
 -- tasks
 config.bgTaskName = config.toolName .. " [Background Tasks]"                     -- background task name for msp services etc

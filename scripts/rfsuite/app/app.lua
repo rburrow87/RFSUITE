@@ -371,7 +371,7 @@ end
 -- UPDATE CURRENT TELEMETRY STATE - RUNS MOST CLOCK CYCLES
 function app.updateTelemetryState()
 
-   
+
         if system:getVersion().simulation ~= true then
                 if not rfsuite.rssiSensor then
                         app.triggers.telemetryState = app.telemetryStatus.noSensor
@@ -617,7 +617,7 @@ function app.wakeupUI()
                                 app.dialogs.nolinkDisplay = false
 
                                 if system:getVersion().simulation ~= true then
-                                        if app.triggers.telemetryState ~= 1 then
+                                        if app.triggers.telemetryState ~= 1  then
                                                 app.audio.playTimeout = true
                                                 app.triggers.exitAPP = true
                                         else
@@ -654,10 +654,6 @@ function app.wakeupUI()
 
         -- a watchdog to enable the close button on a progress box dialog when loading data from the fbl
         if app.dialogs.progressDisplay == true and app.dialogs.progressWatchDog ~= nil then
-
-                -- if rfsuite.config.watchdogParam ~= nil and rfsuite.config.watchdogParam ~= 1 
-                --	then app.protocol.pageReqTimeout = rfsuite.config.watchdogParam 
-                -- end
 
                 app.dialogs.progressCounter = app.dialogs.progressCounter + 2
                 app.ui.progessDisplayValue(app.dialogs.progressCounter)
@@ -769,7 +765,7 @@ function app.wakeupUI()
 
                 app.triggers.triggerReload = false
         end
-
+        
         -- show an error if msp version is bad
         if app.uiState == app.uiStatus.mainMenu and app.dialogs.nolinkDisplay == false then
 
@@ -991,11 +987,7 @@ function app.create()
         app.ini = assert(loadfile(rfsuite.config.suiteDir .. "lib/lip.lua"))()        
         app.preferences = app.ini.load(rfsuite.config.suiteDir .. "preferences.ini");   
 
-        -- load msp timeout
-        rfsuite.config.watchdogParam = app.preferences.advanced.watchdog
-        if rfsuite.config.watchdogParam == nil or rfsuite.config.watchdogParam == "" then
-                rfsuite.config.watchdogParam = math.floor(app.protocol.pageReqTimeout + (app.protocol.pageReqTimeout * 0.5))
-        end
+
         
         -- some sources that we only create once but can use
         app.sensors.profileCRSF = system.getSource("PID#")
@@ -1018,21 +1010,6 @@ function app.create()
         rfsuite.config.audioParam = app.preferences.interface.audio
         rfsuite.config.profileswitchParam = app.preferences.interface.profileSwitch
 
-        if system:getVersion().simulation == false then
-                local simpref = app.preferences.advanced.demoSwitch
-                local s = rfsuite.utils.explode(simpref, ",")
-                local simParam = system.getSource({category = s[1], member = s[2]})
-                if tonumber(simParam:value()) == 100 then
-                        config.simulateOnTransmitter = true
-                        app.runningInSimulator = true
-                        print("RF2ETHOS: Running in Demo Mode")
-                        app.audio.playDemo = true
-                else
-                        config.simulateOnTransmitter = false
-                        app.runningInSimulator = false
-                        app.audio.playDemo = false
-                end
-        end
 
         app.ui.openMainMenu()
 

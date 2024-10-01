@@ -188,7 +188,7 @@ function msp.wakeup()
         -- this should be before msp.hecks
         -- doing this is heavy - lets run it every few seconds only
         local now = os.clock()
-        if (now - rssiCheckScheduler) >= 5 or msp.init == true then
+        if (now - rssiCheckScheduler) >= 2 or msp.init == true then
                         rfsuite.rssiSensor = rfsuite.utils.getRssiSensor()
                         rssiCheckScheduler = now
         end
@@ -196,15 +196,19 @@ function msp.wakeup()
         -- run the msp.checks
         
         local state
-        if rfsuite.rssiSensor then
+
+        if system:getVersion().simulation == true then
+                state = true        
+        elseif rfsuite.rssiSensor then
                 state = rfsuite.bg.telemetry.active()
-        elseif system:getVersion().simulation == true then
-                state = true
         else
                 state = false
         end
+     
+ 
         
         if state == true then      
+        
         
                 msp.mspQueue:processQueue()  
                 
