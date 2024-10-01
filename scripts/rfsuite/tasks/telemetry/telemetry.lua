@@ -84,7 +84,7 @@ end
 
 function telemetry.wakeup()
 
-   
+
         if not telemetry.active() then
                 telemetrySOURCE = nil
                 crsfSOURCE = nil

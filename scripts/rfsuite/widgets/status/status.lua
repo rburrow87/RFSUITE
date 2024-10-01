@@ -2162,7 +2162,7 @@ function status.paint(widget)
 
                     sensorVALUE = status.sensors.rssi
 
-                    if sensorVALUE < 1 then sensorVALUE = 0 end
+                   -- if sensorVALUE < 1 then sensorVALUE = 0 end
 
                     if status.titleParam == true then
                         sensorTITLE = theme.title_rssi
@@ -2182,7 +2182,7 @@ function status.paint(widget)
                         sensorMAX = status.sensorRSSIMax
                     end
 
-                    sensorUNIT = "%"
+                    sensorUNIT = "dB"
                     sensorWARN = 0
 
                     local sensorTGT = 'rssi'
@@ -2676,6 +2676,7 @@ function status.getSensors()
     local adjSOURCE
     local adjvalue
     local current
+    
 
     -- lcd.resetFocusTimeout()
 
@@ -2717,8 +2718,10 @@ function status.getSensors()
                 adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 adjvSOURCE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
-                rssiSOURCE = rfsuite.bg.telemetry.getSensorSource("rssi")
+                rssiSOURCE = rfsuite.utils.getRssiSensor()
                 govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")
+   
+   
 
                 if rfsuite.bg.telemetry.getSensorProtocol() == 'ccrsf' then
 
@@ -2823,6 +2826,8 @@ function status.getSensors()
 
                         if rssiSOURCE ~= nil then
                             rssi = rssiSOURCE:value()
+                           
+                            
                             if rssi ~= nil then
                                 rssi = rssi
                             else
@@ -2831,6 +2836,7 @@ function status.getSensors()
                         else
                             rssi = 0
                         end
+                        
 
                         if adjSOURCE ~= nil then
                             adjfunc = adjSOURCE:value()
@@ -3042,7 +3048,7 @@ function status.getSensors()
                         mah = 0
                     end
 
-                        if rssiSOURCE ~= nil then
+                    if rssiSOURCE ~= nil then
                             rssi = rssiSOURCE:value()
                             if rssi ~= nil then
                                 rssi = rssi
@@ -3051,7 +3057,9 @@ function status.getSensors()
                             end
                         else
                             rssi = 0
-                        end
+                    end
+
+                        
 
                     if govSOURCE ~= nil then
                         govId = govSOURCE:value()
@@ -4287,6 +4295,18 @@ end
 function status.wakeupUI(widget)
 
     if not rfsuite.bg.active() then
+                voltageSOURCE = nil
+                rpmSOURCE = nil
+                currentSOURCE = nil
+                temp_escSOURCE  = nil
+                temp_mcuSOURCE = nil   
+                fuelSOURCE  = nil
+                adjSOURCE  = nil
+                adjVALUE  = nil
+                adjvSOURCE  = nil
+                mahSOURCE  = nil
+                rssiSOURCE   = nil
+                govSOURCE  = nil
         return
     else
 

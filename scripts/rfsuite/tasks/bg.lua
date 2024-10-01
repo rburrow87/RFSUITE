@@ -46,13 +46,13 @@ function bg.wakeup()
 
         -- high priority and must alway run regardless of tlm state
         bg.msp.wakeup()
-        
+        bg.telemetry.wakeup() 
+ 
         if bg.telemetry.active() then
         
                 bg.sensors.wakeup()
                 bg.adjfunctions.wakeup()
-                bg.telemetry.wakeup()
-
+                
         end
 
 end
