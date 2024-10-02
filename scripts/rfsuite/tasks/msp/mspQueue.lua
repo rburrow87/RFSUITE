@@ -105,7 +105,7 @@ function MspQueueController:processQueue()
 
                 if self.currentMessage.processReply then self.currentMessage:processReply(buf) end
                 self.currentMessage = nil
-                collectgarbage()
+                --collectgarbage()
 
                 if rfsuite.app.Page ~= nil then if rfsuite.app.Page.mspSuccess then rfsuite.app.Page.mspSuccess() end end
 
@@ -114,7 +114,7 @@ function MspQueueController:processQueue()
                 self.messageQueue = {}
                 if self.currentMessage.errorHandler then self.currentMessage:errorHandler() end
                 self:clear()
-                collectgarbage()
+                --collectgarbage()
 
                 if rfsuite.app.Page ~= nil then if rfsuite.app.Page.mspTimeout then rfsuite.app.Page.mspTimeout() end end
 

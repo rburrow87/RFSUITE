@@ -7,7 +7,7 @@ local config = arg[1]
 local compile = arg[2]
 
 
-elrs = {}
+local elrs = {}
 
 local sensors = {}
 sensors['uid'] = {}

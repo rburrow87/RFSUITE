@@ -229,7 +229,7 @@ local function invalidatePages()
         app.Page = nil
         app.pageState = app.pageStatus.display
         app.saveTS = 0
-        collectgarbage()
+        --collectgarbage()
 end
 
 -- ISSUE AN MSP COMNMAND TO REBOOT THE FBL UNIT
@@ -1121,7 +1121,7 @@ function app.close()
         if app.dialogs.noLink then app.ui.progessNolinkDisplayClose() end
         invalidatePages()
         app.resetState()
-        collectgarbage()
+        --collectgarbage()
         system.exit()
         return true
 end

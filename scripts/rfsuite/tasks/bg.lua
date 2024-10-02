@@ -11,13 +11,20 @@ bg.init = true
 
 bg.heartbeat = nil
 
+bg.init = false                
+-- tasks
+bg.telemetry = assert(compile.loadScript(config.suiteDir .. "tasks/telemetry/telemetry.lua"))(config,compile)
+bg.msp = assert(compile.loadScript(config.suiteDir .. "tasks/msp/msp.lua"))(config,compile)
+bg.adjfunctions = assert(compile.loadScript(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
+bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
+
 function bg.active()
 
         if bg.heartbeat == nil then
                 return false
         end
 
-        if (os.clock() - bg.heartbeat) <= 1 then
+        if (os.clock() - bg.heartbeat) <= 5 then
 
                 return true
         else
@@ -32,17 +39,6 @@ function bg.wakeup()
 
         bg.heartbeat = os.clock()
 
-        -- tasks dont have a create function
-        -- so we handle this here with a loop that
-        -- runs only once
-        if bg.init == true then
-                bg.init = false                
-                -- tasks
-                bg.telemetry = assert(compile.loadScript(config.suiteDir .. "tasks/telemetry/telemetry.lua"))(config,compile)
-                bg.msp = assert(compile.loadScript(config.suiteDir .. "tasks/msp/msp.lua"))(config,compile)
-                bg.adjfunctions = assert(compile.loadScript(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
-                bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
-        end
 
         -- high priority and must alway run regardless of tlm state
         bg.msp.wakeup()

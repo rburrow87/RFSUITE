@@ -3148,7 +3148,7 @@ function status.getSensors()
 
     end
     
-
+    if voltage == nil then voltage = 0 end
     if math.floor(voltage) <= 5 then
         fuel = 0
     end
@@ -4146,7 +4146,7 @@ function status.event(widget, category, value, x, y)
     if closingLOGS then
         if category == EVT_TOUCH and (value == 16640 or value == 16641) then
             closingLOGS = false
-            collectgarbage()
+            --collectgarbage()
             return true
         end
 
@@ -4287,7 +4287,7 @@ function status.wakeup(widget)
     if (now - status.wakeupSchedulerUI) >= schedulerUI then
         status.wakeupSchedulerUI = now
         status.wakeupUI()
-        collectgarbage()
+        --collectgarbage()
     end
 
 end

@@ -86,7 +86,7 @@ function telemetry.wakeup()
 
         -- we need to rate limit these calls to save issues
         
-        if rfsuite.app.triggers.mspBusy ~= true then
+        --if rfsuite.app.triggers.mspBusy ~= true then
                 local now = os.clock()
                 if (now - sensorRateLimit) >= sensorRate then
                         sensorRateLimit = now       
@@ -98,7 +98,7 @@ function telemetry.wakeup()
                         end
 
                 end        
-        end
+        --end
 
         if not telemetry.active() then
                 telemetrySOURCE = nil

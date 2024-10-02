@@ -47,7 +47,7 @@ end
 local function openPage(idx, title, script)
 
         rfsuite.app.Page = assert(compile.loadScript(rfsuite.config.suiteDir .. "app/pages/" .. script))()
-        collectgarbage()
+        --collectgarbage()
 
         rfsuite.app.lastIdx = idx
         rfsuite.app.lastTitle = title

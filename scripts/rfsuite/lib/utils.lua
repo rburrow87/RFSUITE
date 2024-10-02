@@ -90,7 +90,7 @@ function utils.onRtcSet()
         rfsuite.config.clockSet = true
         ELRS_PAUSE_TELEMETRY = false
         CRSF_PAUSE_TELEMETRY = false
-        collectgarbage()
+        --collectgarbage()
 end
 
 function utils.ethosVersion()

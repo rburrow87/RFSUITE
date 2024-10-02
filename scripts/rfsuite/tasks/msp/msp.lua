@@ -125,7 +125,6 @@ function msp.wakeup()
         else
            msp.activeProtocol = "smartPort"
         end
-        
         -- tasks dont have a create function
         -- so we handle this here with a loop that
         -- runs only once
