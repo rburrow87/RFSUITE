@@ -13,6 +13,11 @@ local telemetrySOURCE
 local crsfSOURCE
 local tgt
 
+local sensorRateLimit = os.clock()
+local sensorRate = 2 -- how fast can we call the rssi sensor
+
+local telemetryState = false
+
 
 local sensorTable = {}
 sensorTable["voltage"]  = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 0x0210}, ccrsf = "Vbat", lcrsf = "Rx Batt"}
@@ -26,6 +31,8 @@ sensorTable["governor"] = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 
 sensorTable["rssi"]     = {sport=rfsuite.utils.getRssiSensor(), ccrsf = rfsuite.utils.getRssiSensor(), rfsuite.utils.getRssiSensor()}
 sensorTable["adjF"]     = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5110}, ccrsf = "AdjF" , lcrsf = nil}
 sensorTable["adjV"]     = {sport={category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5111}, ccrsf = "AdjV", lcrsf = nil}
+
+local tlm = system.getSource( { category=CATEGORY_SYSTEM_EVENT, member=TELEMETRY_ACTIVE, options=nil } )
 
 
 function telemetry.getSensorProtocol()
@@ -70,20 +77,28 @@ function telemetry.getSensorSource(name)
 end
 
 
-function telemetry.active()
-    
-        local tlm = system.getSource( { category=CATEGORY_SYSTEM_EVENT, member=TELEMETRY_ACTIVE, options=nil } )
-        
-        if tlm:value() == 100 then
-                return true
-        end
-
-
-        return false
+function telemetry.active()     
+        return telemetryState    
 end
 
 function telemetry.wakeup()
 
+
+        -- we need to rate limit these calls to save issues
+        
+        if rfsuite.app.triggers.mspBusy ~= true then
+                local now = os.clock()
+                if (now - sensorRateLimit) >= sensorRate then
+                        sensorRateLimit = now       
+
+                        if tlm:state() == true then
+                                telemetryState = true
+                        else
+                                telemetryState = false
+                        end
+
+                end        
+        end
 
         if not telemetry.active() then
                 telemetrySOURCE = nil

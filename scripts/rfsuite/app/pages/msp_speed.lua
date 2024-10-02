@@ -29,6 +29,9 @@ mspSpeedTestStats['timeouts'] = 0
 mspSpeedTestStats['checksum'] = 0
 
 
+local RateLimit = os.clock()
+local Rate = 0.4 -- how many times per second we can call msp 
+
 local function openPage(pidx, title, script)
 
 
@@ -351,17 +354,6 @@ local function wakeup()
                 formLoaded = false
         end
         
-        --[[
-        if testLoader == false then
-                print("here")
-                mspSpeedTest = false
-                startTest = false
-                testLoaderDisplay = false
-                startTestTime = os.clock()
-                startTestLength = 0          
-                triggerStart  = false               
-        end
-        ]]--
 
         if triggerStart == true then
                 local buttons = {
@@ -480,8 +472,11 @@ local function wakeup()
                         testLoaderDisplay = false
                 end
 
+        
                 -- do msp query
-                if rfsuite.bg.msp.mspQueue:isProcessed() then
+                local now = os.clock()
+                if rfsuite.bg.msp.mspQueue:isProcessed() and ((now - RateLimit) >= Rate)then
+                        RateLimit = now
                         mspSpeedTestStats['total'] = mspSpeedTestStats['total'] + 1
                         mspQueryStartTime = os.clock()
                         
