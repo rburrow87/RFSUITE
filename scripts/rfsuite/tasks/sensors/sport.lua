@@ -11,7 +11,7 @@ local customSensors = {}
 customSensors[0x5450] = {name  = "Governor", unit = UNIT_RAW}
 customSensors[0x5110] = {name  = "Adj. Source", unit = UNIT_RAW}
 customSensors[0x5111] = {name  = "Adj. Value", unit = UNIT_RAW}
-customSensors[0x5250] = {name  = "Capacity", unit=UNIT_MILLIAMPERE_HOUR}
+customSensors[0x5250] = {name  = "Consumption", unit=UNIT_MILLIAMPERE_HOUR}
 customSensors[0x5460] = {name  = "Model ID", unit = UNIT_RAW}
 customSensors[0x5471] = {name  = "PID Profile", unit = UNIT_RAW}
 customSensors[0x5472] = {name  = "Rate Profile", unit = UNIT_RAW}
