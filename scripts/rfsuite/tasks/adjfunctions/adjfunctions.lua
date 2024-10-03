@@ -143,10 +143,14 @@ function adjfunc.wakeup()
 
            
            if adjfunc.adjValue ~= nil then
+                if type(adjfunc.adjValue) == "number" then
                         adjfunc.adjValue = math.floor(adjfunc.adjValue)
+                end        
            end
-           if adjfunc.adjValue ~= nil then
+           if adjfunc.adjFunction ~= nil then
+                if type(adjfunc.adjFunction) == "number" then           
                         adjfunc.adjFunction = math.floor(adjfunc.adjFunction)
+                end        
            end
 
            if adjfunc.adjFunction ~= adjfunc.adjFunctionOld then

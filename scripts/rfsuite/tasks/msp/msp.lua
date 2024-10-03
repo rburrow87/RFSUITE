@@ -6,12 +6,12 @@ local config = arg[1]
 local compile = arg[2]
 
 msp = {}
-msp.init = true
+
 msp.activeProtocol = nil
 msp.onConnectChecksInit = true
 
 
-local rssiCheckScheduler = os.clock()
+
 local protocol = assert(compile.loadScript(config.suiteDir .. "tasks/msp/protocols.lua"))()
 
 msp.sensor = sport.getSensor({primId = 0x32})
@@ -64,7 +64,8 @@ function msp.onConnectBgChecks()
                                 simulatorResponse = {0, 12, 7}
                         }
                         msp.mspQueue:add(message)
-                elseif rfsuite.config.clockSet == nil and msp.mspQueue:isProcessed() then
+                elseif rfsuite.config.clockSet == nil and msp.mspQueue:isProcessed() and rfsuite.clocksetPending ~= true then
+                        rfsuite.clocksetPending = true
                         rfsuite.utils.setRtc(rfsuite.utils.onRtcSet)
                         rfsuite.utils.log("Sync clock: " .. os.clock())
 
@@ -157,7 +158,8 @@ function msp.wakeup()
         end
 
 
-        if msp.activeProtocol ~= msp.protocol.mspProtocol then
+        if msp.activeProtocol ~= msp.protocol.mspProtocol or rfsuite.rssiSensorChanged == true then
+
                 rfsuite.utils.log("Switching protocol: " .. msp.activeProtocol)
                 
                 msp.protocol = protocol.getProtocol()
@@ -178,13 +180,7 @@ function msp.wakeup()
                 msp.onConnectChecksInit = true 
         end
  
-        -- this should be before msp.hecks
-        -- doing this is heavy - lets run it every few seconds only
-        local now = os.clock()
-        if (now - rssiCheckScheduler) >= 2 or msp.init == true then
-                        rfsuite.rssiSensor = rfsuite.utils.getRssiSensor()
-                        rssiCheckScheduler = now
-        end
+ 
 
         -- run the msp.checks
         
@@ -200,9 +196,8 @@ function msp.wakeup()
      
  
         
-        if state == true then      
-        
-        
+        if state == true then     
+
                 msp.mspQueue:processQueue()  
                 
                 -- checks that run on each connection to the fbl

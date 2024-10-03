@@ -91,7 +91,8 @@ end
 
 function utils.onRtcSet()
         system.playTone(1600, 500, 0)
-        config.clockSet = true
+        rfsuite.config.clockSet = true
+        rfsuite.clocksetPending = false
         ELRS_PAUSE_TELEMETRY = false
         CRSF_PAUSE_TELEMETRY = false
         --collectgarbage()
@@ -108,7 +109,7 @@ function utils.getRssiSensor()
         for i, name in pairs(rssiNames) do
                 rssiSensor = system.getSource(name)
                 if rssiSensor then 
-                        return rssiSensor 
+                        return {sensor = rssiSensor,name=name} 
                 end
         end
 end

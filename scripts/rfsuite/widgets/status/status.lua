@@ -2718,7 +2718,7 @@ function status.getSensors()
                 adjVALUE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 adjvSOURCE = rfsuite.bg.telemetry.getSensorSource("adjV")
                 mahSOURCE = rfsuite.bg.telemetry.getSensorSource("capacity")
-                rssiSOURCE = rfsuite.utils.getRssiSensor()
+                rssiSOURCE = rfsuite.utils.getRssiSensor().sensor
                 govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")
    
    

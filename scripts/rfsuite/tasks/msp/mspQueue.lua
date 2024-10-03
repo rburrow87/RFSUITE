@@ -133,6 +133,7 @@ function MspQueueController:clear()
 end
 
 local function deepCopy(original)
+
         local copy
         if type(original) == "table" then
                 copy = {}
@@ -145,6 +146,10 @@ local function deepCopy(original)
 end
 
 function MspQueueController:add(message)
+
+        if not rfsuite.bg.telemetry.active() then
+                return
+        end
 
         if message ~= nil then
                 message = deepCopy(message)

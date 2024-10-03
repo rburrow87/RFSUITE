@@ -133,7 +133,7 @@ function frsky.wakeup()
     end
 
    -- if gui or queue is busy.. do not do this!
-   if rfsuite.bg.telemetry.active() and rfsuite.rssiSensor then
+   if rfsuite.bg and rfsuite.bg.telemetry and rfsuite.bg.telemetry.active() and rfsuite.rssiSensor then
            if rfsuite.app.guiIsRunning == false and rfsuite.bg.msp.mspQueue:isProcessed() then
                 while telemetryPop() do end
            end 

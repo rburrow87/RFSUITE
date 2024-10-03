@@ -87,15 +87,15 @@ local function mspReceivedReply(payload)
         local idx = 1
         local status = payload[idx]
         
-        if status == nil then return nil end
+        --if status == nil then return nil end
         
         local version = (status & 0x60) >> 5
         local start = (status & 0x10) ~= 0
         local seq = status & 0x0F
         
-        if version == nil then return nil end
-        if start == nil then return nil end
-        if seq == nil then return nil end
+        --if version == nil then return nil end
+        --if start == nil then return nil end
+        --if seq == nil then return nil end
         
         
         idx = idx + 1
@@ -145,16 +145,57 @@ local function mspReceivedReply(payload)
         return true
 end
 
+
+
+--[[
+local mspPollReplyScheduler = os.clock()
+function mspPollReply()
+
+        local now = os.clock()
+        if (now - mspPollReplyScheduler) >= 0.05 then
+                mspPollReplyScheduler = now      
+                local mspData = rfsuite.bg.msp.protocol.mspPoll()
+                if mspData ~= nil and mspReceivedReply(mspData) then
+                        mspLastReq = 0
+                        return mspRxReq, mspRxBuf, mspRxError
+                else
+                        return nil,nil,nil
+                end
+        else
+                return nil,nil,nil
+        end
+end
+]]--
+
+--[[
+function mspPollReply()
+
+        local mspData = rfsuite.bg.msp.protocol.mspPoll()
+        if mspData ~= nil and mspReceivedReply(mspData) then
+                mspLastReq = 0
+                return mspRxReq, mspRxBuf, mspRxError
+        end
+
+        return nil, nil, nil
+end
+]]--
+
+
+
 function mspPollReply()
         local startTime = os.clock()
-        while (os.clock() - startTime < 0.1) do   -- keep this at 0.1 or msp speed tests will fail!!
+        while (os.clock() - startTime < 0.1) do  
                 local mspData = rfsuite.bg.msp.protocol.mspPoll()
                 if mspData ~= nil and mspReceivedReply(mspData) then
                         mspLastReq = 0
                         return mspRxReq, mspRxBuf, mspRxError
                 end
         end
+        return nil, nil, nil
 end
+
+
+
 
 function mspClearTxBuf()
         mspTxBuf = {}

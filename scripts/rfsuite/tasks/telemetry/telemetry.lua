@@ -100,7 +100,7 @@ function telemetry.wakeup()
                 end        
         end
 
-        if not telemetry.active() then
+        if not telemetry.active() or rfsuite.rssiSensorChanged == true then
                 telemetrySOURCE = nil
                 crsfSOURCE = nil
                 protocol = nil

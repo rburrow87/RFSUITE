@@ -18,6 +18,11 @@ bg.msp = assert(compile.loadScript(config.suiteDir .. "tasks/msp/msp.lua"))(conf
 bg.adjfunctions = assert(compile.loadScript(config.suiteDir .. "tasks/adjfunctions/adjfunctions.lua"))(config,compile)
 bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors.lua"))(config,compile)
 
+rfsuite.rssiSensorChanged = true
+
+local rssiCheckScheduler = os.clock()
+local lastRssiSensorName = nil
+
 function bg.active()
 
  
@@ -44,6 +49,27 @@ function bg.wakeup()
 
         bg.heartbeat = os.clock()
 
+
+       -- this should be before msp.hecks
+        -- doing this is heavy - lets run it every few seconds only
+        local now = os.clock()
+        if (now - rssiCheckScheduler) >= 2 then
+                        local currentRssiSensor = rfsuite.utils.getRssiSensor()
+                        
+                        if currentRssiSensor ~= nil then
+                        
+                                if lastRssiSensorName ~= currentRssiSensor.name then
+                                      rfsuite.rssiSensorChanged = true  
+                                else
+                                      rfsuite.rssiSensorChanged = false 
+                                end
+                        
+                                lastRssiSensorName = currentRssiSensor.name
+                                rfsuite.rssiSensor = currentRssiSensor.sensor
+                        end
+                        rssiCheckScheduler = now
+        end
+        
 
         -- high priority and must alway run regardless of tlm state
         bg.msp.wakeup()

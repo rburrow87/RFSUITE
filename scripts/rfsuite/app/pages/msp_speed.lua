@@ -30,7 +30,7 @@ mspSpeedTestStats['checksum'] = 0
 
 
 local RateLimit = os.clock()
-local Rate = 0.15 -- how many times per second we can call msp 
+local Rate = 0.25 -- how many times per second we can call msp 
 
 local function openPage(pidx, title, script)
 
@@ -281,7 +281,13 @@ local function updateStats()
                         fields['success']:value(tostring(mspSpeedTestStats['success']))
                 end
 
-                local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
+                local avgQueryTime
+                local avg = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2)
+                if avg ~= nil then
+                        avgQueryTime = avg .. "s"
+                else
+                        avgQueryTime = "0s"
+                end
                 fields['time']:value(tostring(avgQueryTime))        
         end
 end
@@ -358,10 +364,10 @@ local function wakeup()
         if triggerStart == true then
                 local buttons = {
                         {
-                                label = "  600S  ",
+                                label = "  60S  ",
                                 action = function()
                                         -- trigger test
-                                        startTestLength = 600
+                                        startTestLength = 60
                                         startTestTime = os.clock()
                                         testLoaderStepSize = 100 / (startTestLength / 2)
                                         testLoaderStepSizeValue = 0                                        
@@ -370,10 +376,10 @@ local function wakeup()
                                 end
                         }, 
                         {
-                                label = "  300S  ",
+                                label = "  30S  ",
                                 action = function()
                                         -- trigger test
-                                        startTestLength = 300
+                                        startTestLength = 30
                                         startTestTime = os.clock()
                                         testLoaderStepSize = 100 / (startTestLength / 2)
                                         testLoaderStepSizeValue = 0                                            
@@ -382,10 +388,10 @@ local function wakeup()
                                 end
                         }, 
                         {
-                                label = "  120S  ",
+                                label = "  20S  ",
                                 action = function()
                                         -- trigger test
-                                        startTestLength = 120
+                                        startTestLength = 20
                                         startTestTime = os.clock()
                                         testLoaderStepSize = 100 / (startTestLength / 2)
                                         testLoaderStepSizeValue = 0                                            
@@ -394,10 +400,10 @@ local function wakeup()
                                 end
                         },                         
                         {
-                                label = "  30S  ",
+                                label = "  10S  ",
                                 action = function()
                                         -- trigger test
-                                        startTestLength = 30
+                                        startTestLength = 10
                                         startTestTime = os.clock()
                                         testLoaderStepSize = 100 / (startTestLength / 2)
                                         testLoaderStepSizeValue = 0                                            
