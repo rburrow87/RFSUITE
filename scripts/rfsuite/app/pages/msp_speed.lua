@@ -30,7 +30,7 @@ mspSpeedTestStats['checksum'] = 0
 
 
 local RateLimit = os.clock()
-local Rate = 0.1 -- how many times per second we can call msp 
+local Rate = 0.15 -- how many times per second we can call msp 
 
 local function openPage(pidx, title, script)
 

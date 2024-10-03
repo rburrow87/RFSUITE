@@ -47,8 +47,13 @@ function MspQueueController:processQueue()
                 lastTimeInterval = 1
         end
 
+        -- catch this as can go bad on protocol switch?
+        if lastTimeInterval == nil then
+                lastTimeInterval = 1
+        end
+
         if not system:getVersion().simulation == true then
-                if not self.lastTimeCommandSent or self.lastTimeCommandSent + lastTimeInterval < os.clock() then
+                if self.lastTimeCommandSent == nil or self.lastTimeCommandSent + lastTimeInterval < os.clock() then
                         if self.currentMessage.payload then
                                 --rfsuite.utils.log("Sending  cmd "..self.currentMessage.command..": {" .. rfsuite.utils.joinTableItems(self.currentMessage.payload, ", ") .. "}")
                                 rfsuite.bg.msp.protocol.mspWrite(self.currentMessage.command, self.currentMessage.payload)

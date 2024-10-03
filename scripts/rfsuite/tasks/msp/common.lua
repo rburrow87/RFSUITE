@@ -86,9 +86,18 @@ local function mspReceivedReply(payload)
         -- rfsuite.utils.log("Starting mspReceivedReply")
         local idx = 1
         local status = payload[idx]
+        
+        if status == nil then return nil end
+        
         local version = (status & 0x60) >> 5
         local start = (status & 0x10) ~= 0
         local seq = status & 0x0F
+        
+        if version == nil then return nil end
+        if start == nil then return nil end
+        if seq == nil then return nil end
+        
+        
         idx = idx + 1
         rfsuite.utils.log(" msp sequence #:  " .. string.format("%u", seq))
         if start then
@@ -138,7 +147,7 @@ end
 
 function mspPollReply()
         local startTime = os.clock()
-        while (os.clock() - startTime < 0.05) do
+        while (os.clock() - startTime < 0.1) do   -- keep this at 0.1 or msp speed tests will fail!!
                 local mspData = rfsuite.bg.msp.protocol.mspPoll()
                 if mspData ~= nil and mspReceivedReply(mspData) then
                         mspLastReq = 0

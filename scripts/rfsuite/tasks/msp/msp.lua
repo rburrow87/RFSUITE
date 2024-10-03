@@ -14,6 +14,36 @@ msp.onConnectChecksInit = true
 local rssiCheckScheduler = os.clock()
 local protocol = assert(compile.loadScript(config.suiteDir .. "tasks/msp/protocols.lua"))()
 
+msp.sensor = sport.getSensor({primId = 0x32})
+msp.mspQueue = mspQueue
+if rfsuite.rssiSensor then
+        rfsuite.sensor:module(rfsuite.rssiSensor:module())
+end
+msp.mspQueue = mspQueue
+
+
+-- set active protocol to use
+msp.protocol = protocol.getProtocol()
+
+-- preload all transport methods
+msp.protocolTransports = {}
+for i,v in pairs(protocol.getTransports()) do
+        msp.protocolTransports[i] = assert(compile.loadScript(config.suiteDir .. v))()
+end
+
+-- set active transport table to use
+local transport = msp.protocolTransports[msp.protocol.mspProtocol]
+msp.protocol.mspRead = transport.mspRead
+msp.protocol.mspSend = transport.mspSend
+msp.protocol.mspWrite = transport.mspWrite
+msp.protocol.mspPoll = transport.mspPoll
+
+
+msp.mspQueue = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspQueue.lua"))()
+msp.mspQueue.maxRetries = msp.protocol.maxRetries
+msp.mspHelper = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspHelper.lua"))()
+assert(compile.loadScript(config.suiteDir .. "tasks/msp/common.lua"))()       
+
 -- BACKGROUND checks
 function msp.onConnectBgChecks()
 
@@ -125,43 +155,7 @@ function msp.wakeup()
         else
            msp.activeProtocol = "smartPort"
         end
-        -- tasks dont have a create function
-        -- so we handle this here with a loop that
-        -- runs only once
-        if msp.init == true then
 
-                -- get sensor for msp comms
-                msp.sensor = sport.getSensor({primId = 0x32})
-                msp.mspQueue = mspQueue
-                if rfsuite.rssiSensor then
-                        rfsuite.sensor:module(rfsuite.rssiSensor:module())
-                end
-                
-                -- set active protocol to use
-                msp.protocol = protocol.getProtocol()
-         
-                -- preload all transport methods
-                msp.protocolTransports = {}
-                for i,v in pairs(protocol.getTransports()) do
-                        msp.protocolTransports[i] = assert(compile.loadScript(config.suiteDir .. v))()
-                end
-         
-                -- set active transport table to use
-                local transport = msp.protocolTransports[msp.protocol.mspProtocol]
-                msp.protocol.mspRead = transport.mspRead
-                msp.protocol.mspSend = transport.mspSend
-                msp.protocol.mspWrite = transport.mspWrite
-                msp.protocol.mspPoll = transport.mspPoll
-                
-                
-                msp.mspQueue = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspQueue.lua"))()
-                msp.mspQueue.maxRetries = msp.protocol.maxRetries
-                msp.mspHelper = assert(compile.loadScript(config.suiteDir .. "tasks/msp/mspHelper.lua"))()
-                assert(compile.loadScript(config.suiteDir .. "tasks/msp/common.lua"))()                
-
-                msp.init = false
-        end 
- 
 
         if msp.activeProtocol ~= msp.protocol.mspProtocol then
                 rfsuite.utils.log("Switching protocol: " .. msp.activeProtocol)

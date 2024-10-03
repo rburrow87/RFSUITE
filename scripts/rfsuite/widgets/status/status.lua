@@ -4350,6 +4350,7 @@ function status.wakeupUI(widget)
                     -- timer alarm
                     status.playTIMERALARM(widget)
 
+                    if status.linkUPTime == nil then status.linkUPTime = 0 end
 
                     if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 10) then
 
@@ -4509,6 +4510,7 @@ function status.wakeupUI(widget)
                         status.lfTimer = false
                     end
 
+              
 
                     if status.lfTimer == true then
                         -- start timer

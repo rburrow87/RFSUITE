@@ -20,12 +20,17 @@ bg.sensors = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sensors
 
 function bg.active()
 
+ 
         if bg.heartbeat == nil then
                 return false
         end
 
+        -- if msp is busy.. we are 100% ok
+        if rfsuite.app.triggers.mspBusy == true then
+                return true
+        end
+        
         if (os.clock() - bg.heartbeat) <= 5 then
-
                 return true
         else
                 return false
@@ -44,8 +49,7 @@ function bg.wakeup()
         bg.msp.wakeup()
         bg.telemetry.wakeup() 
  
-        if bg.telemetry.active() then
-        
+        if bg.telemetry.active() then      
                 bg.sensors.wakeup()
                 bg.adjfunctions.wakeup()
                 
