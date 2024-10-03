@@ -528,12 +528,12 @@ function app.wakeupUI()
                     and (rfsuite.app.sensors.profileCRSF ~= nil and rfsuite.app.sensors.profileCRSF:state() == true) 
                     and (rfsuite.app.sensors.rateCRSF ~= nil and rfsuite.app.sensors.rateCRSF:state() == true) 
                     then
-                        profileCheckInterval = 0.1
+                        profileCheckInterval = 0.01
                 elseif (rfsuite.app.sensors ~= nil)
                     and (rfsuite.app.sensors.profileSPORT ~= nil and rfsuite.app.sensors.profileSPORT:state() == true) 
                     and (rfsuite.app.sensors.rateSPORT ~= nil and rfsuite.app.sensors.rateSPORT:state() == true) 
                     then 
-                        profileCheckInterval = 0.1
+                        profileCheckInterval = 0.01
                 else
                        profileCheckInterval = 1
                 end
