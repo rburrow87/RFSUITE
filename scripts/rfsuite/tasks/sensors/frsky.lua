@@ -116,6 +116,8 @@ local function telemetryPop()
         -- Pops a received SPORT packet from the queue. Please note that only packets using a data ID within 0x5000 to 0x50FF (frame ID == 0x10), as well as packets with a frame ID equal 0x32 (regardless of the data ID) will be passed to the LUA telemetry receive queue.
         local frame = rfsuite.bg.msp.sensor:popFrame()
         if frame == nil then return false end
+        
+        if not frame.physId or not frame.primId then return end
 
         createSensor(frame:physId(), frame:primId(), frame:appId(), frame:value())
         dropSensor(frame:physId(), frame:primId(), frame:appId(), frame:value())

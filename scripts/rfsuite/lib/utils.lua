@@ -112,6 +112,7 @@ function utils.getRssiSensor()
                         return {sensor = rssiSensor,name=name} 
                 end
         end
+        return {sensor = nil,name=nil}
 end
 
 function utils.titleCase(str)
