@@ -413,10 +413,10 @@ end
 function elrs.wakeup()
 
 
-
-        local pauseTelemetry = ELRS_PAUSE_TELEMETRY or CRSF_PAUSE_TELEMETRY
-        while not pauseTelemetry and elrs.crossfirePop() do end
-
+        if rfsuite.bg.telemetry.active() and rfsuite.rssiSensor  then
+                local pauseTelemetry = ELRS_PAUSE_TELEMETRY or CRSF_PAUSE_TELEMETRY
+                while not pauseTelemetry and elrs.crossfirePop() do end
+        end
 end
 
 return elrs

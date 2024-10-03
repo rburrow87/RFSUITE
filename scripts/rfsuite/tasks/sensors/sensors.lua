@@ -7,7 +7,7 @@ local compile = arg[2]
 local sensors = {}
 
 sensors.elrs = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/elrs.lua"))(config,compile)
-sensors.sport = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/sport.lua"))(config,compile)
+sensors.frsky = assert(compile.loadScript(config.suiteDir .. "tasks/sensors/frsky.lua"))(config,compile)
 
 function sensors.wakeup()
 
@@ -16,20 +16,14 @@ function sensors.wakeup()
                 return
         end
         
-        -- quick kill if not using crsf as this script
-        -- is only for crsf code
-        if rfsuite.rssiSensor == nil then
-                sensors.sport.sensors = {}
-        else        
-        
-                if rfsuite.bg.msp.protocol.mspProtocol == "crsf" and rfsuite.rssiSensor then
-                        sensors.elrs.wakeup()
-                end
-
-                if rfsuite.bg.msp.protocol.mspProtocol == "smartPort" and rfsuite.rssiSensor  then
-                        sensors.sport.wakeup()
-                end        
+        if rfsuite.bg.msp.protocol.mspProtocol == "crsf"  then
+                sensors.elrs.wakeup()
         end
+
+        if rfsuite.bg.msp.protocol.mspProtocol == "smartPort"  then
+                sensors.frsky.wakeup()
+        end        
+
        
 end
 

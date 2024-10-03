@@ -1,5 +1,9 @@
 local utils = {}
 
+local arg = {...}
+local config = arg[1]
+local compile = arg[2]
+
 -- this is used in multiple places - just gives easy way
 -- to grab activeProfile or activeRateProfile in tmp var
 -- you MUST set it to nil after you get it!
@@ -11,11 +15,11 @@ function utils.getCurrentProfile()
             and (rfsuite.app.sensors.rateCRSF ~= nil and rfsuite.app.sensors.rateCRSF:state() == true) 
             then
                 -- crsf call for data              
-                rfsuite.config.activeProfileLast = rfsuite.config.activeProfile
-                rfsuite.config.activeProfile = math.floor(rfsuite.app.sensors.profileCRSF:value())
+                config.activeProfileLast = config.activeProfile
+                config.activeProfile = math.floor(rfsuite.app.sensors.profileCRSF:value())
                 
-                rfsuite.config.activeRateProfileLast = rfsuite.config.activeRateProfile
-                rfsuite.config.activeRateProfile = math.floor(rfsuite.app.sensors.rateCRSF:value())
+                config.activeRateProfileLast = config.activeRateProfile
+                config.activeRateProfile = math.floor(rfsuite.app.sensors.rateCRSF:value())
     
         elseif (rfsuite.app.sensors ~= nil)
             and (rfsuite.app.sensors.profileSPORT ~= nil and rfsuite.app.sensors.profileSPORT:state() == true) 
@@ -23,11 +27,11 @@ function utils.getCurrentProfile()
             then       
                 -- call sport sensor data
                  
-                rfsuite.config.activeProfileLast = rfsuite.config.activeProfile
-                rfsuite.config.activeProfile = math.floor(rfsuite.app.sensors.profileSPORT:value())
+                config.activeProfileLast = config.activeProfile
+                config.activeProfile = math.floor(rfsuite.app.sensors.profileSPORT:value())
                 
-                rfsuite.config.activeRateProfileLast = rfsuite.config.activeRateProfile
-                rfsuite.config.activeRateProfile = math.floor(rfsuite.app.sensors.rateSPORT:value())
+                config.activeRateProfileLast = config.activeRateProfile
+                config.activeRateProfile = math.floor(rfsuite.app.sensors.rateSPORT:value())
     
         else
                 -- msp call to get data
@@ -44,11 +48,11 @@ function utils.getCurrentProfile()
                                         buf.offset = 26
                                         local activeRate = rfsuite.bg.msp.mspHelper.readU8(buf)                                                          
                                 
-                                        rfsuite.config.activeProfileLast = rfsuite.config.activeProfile
-                                        rfsuite.config.activeRateProfileLast = rfsuite.config.activeRateProfile  
+                                        config.activeProfileLast = config.activeProfile
+                                        config.activeRateProfileLast = config.activeRateProfile  
                                          
-                                        rfsuite.config.activeProfile = activeProfile + 1
-                                        rfsuite.config.activeRateProfile = activeRate + 1
+                                        config.activeProfile = activeProfile + 1
+                                        config.activeRateProfile = activeRate + 1
 
                                 end 
                         end,
@@ -87,7 +91,7 @@ end
 
 function utils.onRtcSet()
         system.playTone(1600, 500, 0)
-        rfsuite.config.clockSet = true
+        config.clockSet = true
         ELRS_PAUSE_TELEMETRY = false
         CRSF_PAUSE_TELEMETRY = false
         --collectgarbage()
@@ -390,11 +394,11 @@ end
 
 function utils.log(msg)
 
-        if rfsuite.config.logEnable == true then
+        if config.logEnable == true then
 
-                if rfsuite.config.logEnableScreen == true then print(msg) end
+                if config.logEnableScreen == true then print(msg) end
 
-                local f = io.open(rfsuite.config.suiteDir .. "/logs/rfsuite.log", 'a')
+                local f = io.open(config.suiteDir .. "/logs/rfsuite.log", 'a')
                 io.write(f, tostring(msg) .. "\n")
                 io.close(f)
 
