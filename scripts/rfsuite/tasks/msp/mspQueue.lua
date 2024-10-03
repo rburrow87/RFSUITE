@@ -147,7 +147,7 @@ end
 
 function MspQueueController:add(message)
 
-        if not rfsuite.bg.telemetry.active() then
+        if not rfsuite.bg.telemetry.active()  then
                 return
         end
 

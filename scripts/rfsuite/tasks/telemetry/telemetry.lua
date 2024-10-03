@@ -77,7 +77,12 @@ function telemetry.getSensorSource(name)
 end
 
 
-function telemetry.active()     
+function telemetry.active()   
+
+        if system:getVersion().simulation == true then
+                return true
+        end
+  
         return telemetryState    
 end
 

@@ -57,8 +57,8 @@ function bg.wakeup()
                         local currentRssiSensor = rfsuite.utils.getRssiSensor()
                         
                         if currentRssiSensor ~= nil then
-                        
-                                if lastRssiSensorName ~= currentRssiSensor.name then
+                                
+                                if lastRssiSensorName ~= currentRssiSensor.name  then
                                       rfsuite.rssiSensorChanged = true  
                                 else
                                       rfsuite.rssiSensorChanged = false 
@@ -66,8 +66,13 @@ function bg.wakeup()
                         
                                 lastRssiSensorName = currentRssiSensor.name
                                 rfsuite.rssiSensor = currentRssiSensor.sensor
+                        else
+                                rfsuite.rssiSensorChanged = false
                         end
                         rssiCheckScheduler = now
+        end
+        if system:getVersion().simulation == true then
+                rfsuite.rssiSensorChanged = false
         end
         
 

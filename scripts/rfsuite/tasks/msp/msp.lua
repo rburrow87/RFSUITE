@@ -157,9 +157,10 @@ function msp.wakeup()
            msp.activeProtocol = "smartPort"
         end
 
-
-        if msp.activeProtocol ~= msp.protocol.mspProtocol or rfsuite.rssiSensorChanged == true then
-
+        --if msp.activeProtocol ~= msp.protocol.mspProtocol or rfsuite.rssiSensorChanged == true then
+        
+        if rfsuite.rssiSensorChanged == true then
+        
                 rfsuite.utils.log("Switching protocol: " .. msp.activeProtocol)
                 
                 msp.protocol = protocol.getProtocol()
@@ -197,7 +198,6 @@ function msp.wakeup()
  
         
         if state == true then     
-
                 msp.mspQueue:processQueue()  
                 
                 -- checks that run on each connection to the fbl
