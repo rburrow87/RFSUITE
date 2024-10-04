@@ -37,7 +37,7 @@ function utils.getCurrentProfile()
                 -- msp call to get data
  
                 if rfsuite.config.ethosRunningVersion  ~= nil and rfsuite.config.ethosRunningVersion > 1516 then
-                        print("do msp")
+  
                         local message = {
                                 command = 101, -- MSP_SERVO_CONFIGURATIONS
                                 processReply = function(self, buf)
@@ -61,9 +61,7 @@ function utils.getCurrentProfile()
 
                         }
                         rfsuite.bg.msp.mspQueue:add(message)
-                else
-                         print("skip msp")
-                
+          
                 end
         
         end

@@ -132,12 +132,12 @@ local function armingDisableFlagsToString(flags)
                         if i == 25 then t = t .. "Arm Switch" end
                 end
         end
-        if t == "" then t = "N/A" end
+        if t == "" then t = "OK" end
         return t
 end
 
 local function getFreeDataflashSpace()
-        if not summary.supported then return "N/A" end
+        if not summary.supported then return "Unsupported" end
         local freeSpace = summary.totalSize - summary.usedSize
         return string.format("%.1f MB", freeSpace / (1024 * 1024))
 end
