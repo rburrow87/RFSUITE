@@ -66,6 +66,8 @@ end
 
 
 function utils.setRtc(callback, callbackParam)
+
+        rfsuite.clocksetPending = false
         local message = {
                 command = 246, -- MSP_SET_RTC
                 payload = {},
@@ -90,9 +92,9 @@ function utils.setRtc(callback, callbackParam)
 end
 
 function utils.onRtcSet()
-        system.playTone(1600, 500, 0)
-        rfsuite.config.clockSet = true
-        rfsuite.clocksetPending = false
+        --system.playTone(1600, 500, 0)
+        system.playFile(rfsuite.config.suiteDir .. "app/sounds/beep.wav")
+        rfsuite.config.clockSet = true   
         ELRS_PAUSE_TELEMETRY = false
         CRSF_PAUSE_TELEMETRY = false
         --collectgarbage()

@@ -130,7 +130,7 @@ function adjfunc.wakeup()
                         end                 
                 end
         else        
-                if type(CATEGORY_TELEMETRY_SENSOR) == number then
+                if type(CATEGORY_TELEMETRY_SENSOR) == "number" then
                         adjfunc.adjFunctionSrc = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5110})
                         adjfunc.adjValueSrc = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = 0x5111})
                 end

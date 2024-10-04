@@ -68,7 +68,6 @@ function msp.onConnectBgChecks()
                         rfsuite.clocksetPending = true
                         rfsuite.utils.setRtc(rfsuite.utils.onRtcSet)
                         rfsuite.utils.log("Sync clock: " .. os.clock())
-
                 elseif (rfsuite.config.tailMode == nil or rfsuite.config.swashMode == nil) and msp.mspQueue:isProcessed() then
                                 local message = {
                                         command = 42, -- MIXER
