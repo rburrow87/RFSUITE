@@ -64,10 +64,41 @@ function msp.onConnectBgChecks()
                                 simulatorResponse = {0, 12, 7}
                         }
                         msp.mspQueue:add(message)
-                elseif rfsuite.config.clockSet == nil and msp.mspQueue:isProcessed() and rfsuite.clocksetPending ~= true then
-                        rfsuite.clocksetPending = true
-                        rfsuite.utils.setRtc(rfsuite.utils.onRtcSet)
+                elseif rfsuite.config.clockSet == nil and msp.mspQueue:isProcessed() then
+
                         rfsuite.utils.log("Sync clock: " .. os.clock())
+                        
+                         local message = {
+                                command = 246, -- MSP_SET_RTC
+                                payload = {},
+                                processReply = function(self, buf)
+                                        rfsuite.utils.log("RTC set.")
+                                        
+                                        if #buf >= 0 then
+                                                rfsuite.config.clockSet = true       
+                                                -- we do the beep later to avoid a double beep
+                                        end
+                                        
+                                end,
+                                simulatorResponse = {}
+                        }
+
+                        -- generate message to send
+                        local now = os.time()
+                        -- format: seconds after the epoch / milliseconds
+                        for i = 1, 4 do
+                                rfsuite.bg.msp.mspHelper.writeU8(message.payload, now & 0xFF)
+                                now = now >> 8
+                        end
+                        rfsuite.bg.msp.mspHelper.writeU16(message.payload, 0)
+
+                        -- add msg to queue
+                        rfsuite.bg.msp.mspQueue:add(message)                       
+                elseif rfsuite.config.clockSet == true and rfsuite.config.clockSetAlart ~= true then   
+                        -- this is unsual but needed because the clock sync does not return anything usefull
+                        -- to confirm its done! 
+                        system.playFile(rfsuite.config.suiteDir .. "app/sounds/beep.wav")
+                        rfsuite.config.clockSetAlart = true
                 elseif (rfsuite.config.tailMode == nil or rfsuite.config.swashMode == nil) and msp.mspQueue:isProcessed() then
                                 local message = {
                                         command = 42, -- MIXER
@@ -144,6 +175,7 @@ function msp.resetState()
         rfsuite.config.tailMode = nil
         rfsuite.config.apiVersion = nil
         rfsuite.config.clockSet = nil
+        rfsuite.config.clockSetAlart = nil
 end
 
 function msp.wakeup()

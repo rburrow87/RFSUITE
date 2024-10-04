@@ -65,40 +65,7 @@ function utils.getCurrentProfile()
 end
 
 
-function utils.setRtc(callback, callbackParam)
 
-        rfsuite.clocksetPending = false
-        local message = {
-                command = 246, -- MSP_SET_RTC
-                payload = {},
-                processReply = function(self, buf)
-                        rfsuite.utils.log("RTC set.")
-                        if callback then callback(callbackParam) end
-                end,
-                simulatorResponse = {}
-        }
-
-        local now = os.time()
-        -- format: seconds after the epoch / milliseconds
-        for i = 1, 4 do
-                rfsuite.bg.msp.mspHelper.writeU8(message.payload, now & 0xFF)
-                now = now >> 8
-        end
-        -- we don't have milliseconds
-
-        rfsuite.bg.msp.mspHelper.writeU16(message.payload, 0)
-
-        rfsuite.bg.msp.mspQueue:add(message)
-end
-
-function utils.onRtcSet()
-        --system.playTone(1600, 500, 0)
-        system.playFile(rfsuite.config.suiteDir .. "app/sounds/beep.wav")
-        rfsuite.config.clockSet = true   
-        ELRS_PAUSE_TELEMETRY = false
-        CRSF_PAUSE_TELEMETRY = false
-        --collectgarbage()
-end
 
 function utils.ethosVersion()
            local environment = system.getVersion()
