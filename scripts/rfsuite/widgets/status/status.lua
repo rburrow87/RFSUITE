@@ -264,6 +264,9 @@ governorMap[101] = "DISARMED"
 
 
 function status.create(widget)
+
+    status.initTime = os.clock()
+
     status.gfx_model = lcd.loadBitmap(model.bitmap())
     status.gfx_heli = lcd.loadBitmap(suiteDir .. "widgets/status/gfx/heli.png")
     status.gfx_close = lcd.loadBitmap(suiteDir .. "widgets/status/gfx/close.png")
@@ -1747,7 +1750,10 @@ function status.paint(widget)
 
 
     if not rfsuite.bg.active() then
+    
+        if (os.clock() -status.initTime) >= 2 then  
         status.screenError("PLEASE ENABLE THE BACKGROUND TASK")
+        end
         lcd.invalidate()
         return
     else
@@ -4308,10 +4314,12 @@ function status.wakeupUI(widget)
                 rssiSOURCE   = nil
                 govSOURCE  = nil
                 lcd.invalidate()
+                status.linkUPTime = nil
         return
     else
 
             status.refresh = false
+
 
 
             status.linkUP = rfsuite.bg.telemetry.active()
