@@ -23,8 +23,8 @@ dropSensorList[0x0400] = {name  = "Temp1", unit = UNIT_RAW }
 
 -- rename
 local renameSensorList = {}
-renameSensorList[0x0500] = {name  = "Head Speed"}
-renameSensorList[0x0501] = {name  = "Tail Speed"}
+renameSensorList[0x0500] = {name  = "Head Speed", onlyifname = "RPM"}
+renameSensorList[0x0501] = {name  = "Tail Speed", onlyifname = "RPM"}
 
 frsky.createSensorCache = {}
 frsky.dropSensorCache = {}
@@ -100,11 +100,14 @@ local function renameSensor(physId, primId, appId, frameValue)
                 if frsky.renameSensorCache[appId] == nil then
                         frsky.renameSensorCache[appId] = system.getSource({category = CATEGORY_TELEMETRY_SENSOR, appId = appId})
                 
-                        if frsky.renameSensorCache[appId] ~= nil then
-                                print("Rename sensor: " .. v.name)
-                                frsky.renameSensorCache[appId]:name(v.name)
-                        end
+                        if frsky.renameSensorCache[appId]:name() == v.onlyifname then
+                
+                                if frsky.renameSensorCache[appId] ~= nil then
+                                        print("Rename sensor: " .. v.name)
+                                        frsky.renameSensorCache[appId]:name(v.name)
+                                end
                         
+                        end
                 
                 end
                 
