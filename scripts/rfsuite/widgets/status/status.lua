@@ -4335,7 +4335,7 @@ function status.wakeupUI(widget)
 
             if status.linkUP == true then
 
-                if ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 5) then
+                if status.linkUPTime ~= nil and ((tonumber(os.clock()) - tonumber(status.linkUPTime)) >= 5) then
                     -- voltage alerts
                     status.playVoltage(widget)
                     -- governor callouts

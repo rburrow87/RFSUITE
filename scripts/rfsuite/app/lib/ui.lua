@@ -590,7 +590,9 @@ end
 function ui.openPageRefresh(idx, title, script, extra1, extra2, extra3, extra5, extra5)
 
         rfsuite.app.triggers.isReady = false
-        rfsuite.app.Page = assert(compile.loadScript(config.suiteDir .. "app/pages/" .. script))()
+        if script ~= nil then
+                rfsuite.app.Page = assert(compile.loadScript(config.suiteDir .. "app/pages/" .. script))()
+        end
 
 end
 

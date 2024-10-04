@@ -35,31 +35,36 @@ function utils.getCurrentProfile()
     
         else
                 -- msp call to get data
-
-
-                local message = {
-                        command = 101, -- MSP_SERVO_CONFIGURATIONS
-                        processReply = function(self, buf)
-                        
-                                if #buf >= 30 then
-                        
-                                        buf.offset = 24
-                                        local activeProfile = rfsuite.bg.msp.mspHelper.readU8(buf)
-                                        buf.offset = 26
-                                        local activeRate = rfsuite.bg.msp.mspHelper.readU8(buf)                                                          
+ 
+                if rfsuite.config.ethosRunningVersion  ~= nil and rfsuite.config.ethosRunningVersion > 1516 then
+                        print("do msp")
+                        local message = {
+                                command = 101, -- MSP_SERVO_CONFIGURATIONS
+                                processReply = function(self, buf)
                                 
-                                        config.activeProfileLast = config.activeProfile
-                                        config.activeRateProfileLast = config.activeRateProfile  
-                                         
-                                        config.activeProfile = activeProfile + 1
-                                        config.activeRateProfile = activeRate + 1
+                                        if #buf >= 30 then
+                                
+                                                buf.offset = 24
+                                                local activeProfile = rfsuite.bg.msp.mspHelper.readU8(buf)
+                                                buf.offset = 26
+                                                local activeRate = rfsuite.bg.msp.mspHelper.readU8(buf)                                                          
+                                        
+                                                config.activeProfileLast = config.activeProfile
+                                                config.activeRateProfileLast = config.activeRateProfile  
+                                                 
+                                                config.activeProfile = activeProfile + 1
+                                                config.activeRateProfile = activeRate + 1
 
-                                end 
-                        end,
-                        simulatorResponse = {240, 1, 124, 0, 35, 0, 0, 0, 0, 0, 0, 224, 1, 10, 1, 0, 26, 0, 0, 0, 0, 0, 2, 0, 6, 0, 6, 1, 4, 1},
+                                        end 
+                                end,
+                                simulatorResponse = {240, 1, 124, 0, 35, 0, 0, 0, 0, 0, 0, 224, 1, 10, 1, 0, 26, 0, 0, 0, 0, 0, 2, 0, 6, 0, 6, 1, 4, 1},
 
-                }
-                rfsuite.bg.msp.mspQueue:add(message)
+                        }
+                        rfsuite.bg.msp.mspQueue:add(message)
+                else
+                         print("skip msp")
+                
+                end
         
         end
 end
