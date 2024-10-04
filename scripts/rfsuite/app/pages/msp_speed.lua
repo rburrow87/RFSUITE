@@ -2,42 +2,278 @@ local line = {}
 local fields = {}
 
 local formLoaded = false
-local triggerStart = false
-local startTest = false
 local startTestTime = os.clock()
 local startTestLength = 0
 
-local testLoader
-local testLoaderDisplay = false
-local testLoaderUpdateRate = 2
-local testLoaderUpdateTime = os.clock()
-local testLoaderStepSize 
-local testLoaderStepSizeValue
+local testLoader = nil
 
 local mspQueryStartTime
 local mspQueryTimeCount = 0
 local getMSPCount = 0
 local doNextMsp = true
 
-local mspSpeedTest = false
-mspSpeedTestStats = {}
-mspSpeedTestStats['total'] = 0
-mspSpeedTestStats['success'] = 0
-mspSpeedTestStats['total'] = 0
-mspSpeedTestStats['retries'] = 0
-mspSpeedTestStats['timeouts'] = 0
-mspSpeedTestStats['checksum'] = 0
+local mspSpeedTestStats
 
+local function resetStats()
+        getMSPCount = 0
+        mspQueryTimeCount = 0
+
+        mspSpeedTestStats = {
+                total = 0,
+                success = 0,
+                total = 0,
+                retries = 0,
+                timeouts = 0,
+                checksum = 0
+        }
+end
+
+resetStats()
 
 local RateLimit = os.clock()
 local Rate = 0.25 -- how many times per second we can call msp 
 
+local function getMSPPidBandwidth()
+        local message = {
+                command = 94, -- MSP_STATUS
+                processReply = function(self, buf)
+                        doNextMsp = true                           
+                end,
+                simulatorResponse = {3, 25, 250, 0, 12, 0, 1, 30, 30, 45, 50, 50, 100, 15, 15, 20, 2, 10, 10, 15, 100, 100, 5, 0, 30, 0, 25, 0, 40, 55, 40, 75, 20, 25, 0, 15, 45, 45, 15, 15, 20}
+        }
+        rfsuite.bg.msp.mspQueue:add(message)
+end
+
+local function getMSPServos()
+        local message = {
+                command = 120, -- MSP_STATUS
+                processReply = function(self, buf)
+                        doNextMsp = true
+                end,
+                simulatorResponse = {
+                        4, 180, 5, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 1, 0, 160, 5, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 1, 0, 14, 6, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 0, 0,
+                        120, 5, 212, 254, 44, 1, 244, 1, 244, 1, 77, 1, 0, 0, 0, 0
+                }
+        }
+        rfsuite.bg.msp.mspQueue:add(message)
+end
+
+
+local function getMSPPids()
+        local message = {
+                command = 112, -- MSP_STATUS
+                processReply = function(self, buf)
+                        doNextMsp = true
+                end,
+                simulatorResponse = {70, 0, 225, 0, 90, 0, 120, 0, 100, 0, 200, 0, 70, 0, 120, 0, 100, 0, 125, 0, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 0, 25, 0}
+        }
+        rfsuite.bg.msp.mspQueue:add(message)
+end
+
+local function getMSP()
+        -- three diff msp queries. 
+        if getMSPCount == 0 then
+                getMSPPidBandwidth()
+                getMSPCount = 1
+        elseif getMSPCount == 1 then
+                getMSPServos()
+                getMSPCount = 2
+        else
+                getMSPPids()
+                getMSPCount = 0
+        end
+        
+        local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
+end
+
+local function updateStats()
+        if rfsuite.config.ethosRunningVersion < 1516 then
+
+                fields['memory'] = form.addTextField(line['memory'], nil, function()
+                        return rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB'
+                end, function(value)
+                end)
+                fields['memory']:enable(false)
+                
+
+                fields['runtime'] = form.addTextField(line['runtime'], nil, function()
+                        return startTestLength
+                end, function(value)
+                end)
+                fields['runtime']:enable(false)                
+
+                fields['total'] = form.addTextField(line['total'], nil, function()
+                        return mspSpeedTestStats['total']
+                end, function(value)
+                end)
+                fields['total']:enable(false)
+
+                fields['retries'] = form.addTextField(line['retries'], nil, function()
+                        return mspSpeedTestStats['retries']
+                end, function(value)
+                end)
+                fields['retries']:enable(false)
+
+                fields['timeouts'] = form.addTextField(line['timeouts'], nil, function()
+                        return mspSpeedTestStats['timeouts']
+                end, function(value)
+                end)
+                fields['timeouts']:enable(false)
+
+                fields['checksum'] = form.addTextField(line['checksum'], nil, function()
+                        return mspSpeedTestStats['checksum']
+                end, function(value)
+                end)
+                fields['checksum']:enable(false)
+
+                if (mspSpeedTestStats['success'] == mspSpeedTestStats['total'] - 1) and mspSpeedTestStats['timeouts'] == 0 then
+                        fields['success'] = form.addTextField(line['success'], nil, function()
+                                return mspSpeedTestStats['total']
+                        end, function(value)
+                        end)
+                        fields['success']:enable(false)
+                else
+                        fields['success'] = form.addTextField(line['success'], nil, function()
+                                return mspSpeedTestStats['success']
+                        end, function(value)
+                        end)
+                        fields['success']:enable(false)
+                end
+
+                local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
+                fields['time'] = form.addTextField(line['time'], nil, function()
+                        return avgQueryTime
+                end, function(value)
+                end)
+                fields['time']:enable(false)
+                
+
+        else
+
+                fields['runtime']:value(startTestLength)
+
+                fields['memory']:value(rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB')
+        
+                fields['total']:value(tostring(mspSpeedTestStats['total']))
+
+                fields['retries']:value(tostring(mspSpeedTestStats['retries']))
+
+                fields['timeouts']:value(tostring(mspSpeedTestStats['timeouts']))
+                
+                fields['checksum']:value(tostring(mspSpeedTestStats['checksum']))
+
+                if (mspSpeedTestStats['success'] == mspSpeedTestStats['total'] - 1) and mspSpeedTestStats['timeouts'] == 0 then
+                        fields['success']:value(tostring(mspSpeedTestStats['success']))
+                else
+                        fields['success']:value(tostring(mspSpeedTestStats['success']))
+                end
+
+                local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
+                fields['time']:value(tostring(avgQueryTime))        
+        end
+end
+
+local function startTest(duration)
+        startTestLength = duration
+        startTestTime = os.clock()
+
+        testLoader = form.openProgressDialog({
+                title="Testing..", 
+                message="Testing msp performance...", 
+                close=function()
+                        updateStats()
+                        testLoader = nil
+                end, 
+                wakeup=function()
+                        local now = os.clock()
+
+                        -- kill if we loose link - but not in sim mode
+                        if rfsuite.bg.telemetry.active() == false and startTest == true and system:getVersion().simulation ~= true then
+                                if testLoader then
+                                        testLoader:close()
+                                        testLoader = nil
+                                end
+                        end
+
+                        if formLoaded == true then
+                                rfsuite.app.triggers.closeProgressLoader = true
+                                formLoaded = false
+                        end
+
+                        testLoader:value((now - startTestTime) * 100 / startTestLength)
+
+                        -- close progress box
+                        if (now - startTestLength) > startTestTime then
+                                testLoader:close()
+                                testLoader = nil
+                                updateStats()
+                        end
+                
+                        -- do msp query
+                        if rfsuite.bg.msp.mspQueue:isProcessed() and ((now - RateLimit) >= Rate) then
+                                RateLimit = now
+                                mspSpeedTestStats['total'] = mspSpeedTestStats['total'] + 1
+                                mspQueryStartTime = os.clock()
+                                
+                                if doNextMsp == true then
+                                        doNextMsp = false
+                                        getMSP()
+                                end        
+                        end
+                end
+        })
+
+        testLoader:value(0)
+        
+        resetStats()   
+        
+        doNextMsp = true
+end
+
+local function openSpeedTestDialog()
+        local buttons = {
+                {
+                        label = "  600S  ",
+                        action = function()
+                                startTest(600)
+                                return true
+                        end
+                }, 
+                {
+                        label = "  300S  ",
+                        action = function()
+                                startTest(300)
+                                return true
+                        end
+                }, 
+                {
+                        label = "  120S  ",
+                        action = function()
+                                startTest(120)
+                                return true
+                        end
+                },                         
+                {
+                        label = "  30S  ",
+                        action = function()
+                                startTest(30)
+                                return true
+                        end
+                }
+        }
+        form.openDialog({
+                title = "Start",
+                message = "Would you like to start the test?  Choose the test run time below.",
+                buttons = buttons,
+                options = TEXT_LEFT
+        })
+end
+
 local function openPage(pidx, title, script)
-
-
         rfsuite.app.lastIdx = pidx
         rfsuite.app.lastTitle = title
         rfsuite.app.lastScript = script
+        rfsuite.app.triggers.closeProgressLoader = true
 
         local w, h = rfsuite.utils.getWindowSize()
 
@@ -56,11 +292,8 @@ local function openPage(pidx, title, script)
                 text = "MENU",
                 icon = nil,
                 options = FONT_S,
-                paint = function()
-                end,
                 press = function()
                         rfsuite.app.ui.openMainMenu()
-
                 end
         })
         rfsuite.app.formNavigationFields['menu']:focus()
@@ -70,10 +303,8 @@ local function openPage(pidx, title, script)
                 text = "*",
                 icon = nil,
                 options = FONT_S,
-                paint = function()
-                end,
                 press = function()
-                        triggerStart = true
+                        openSpeedTestDialog()
                 end
         })
 
@@ -197,337 +428,34 @@ local function openPage(pidx, title, script)
         formLoaded = true
 end
 
-local function updateStats()
-
-
-        if rfsuite.config.ethosRunningVersion < 1516 then
-
-                fields['memory'] = form.addTextField(line['memory'], nil, function()
-                        return rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB'
-                end, function(value)
-                end)
-                fields['memory']:enable(false)
-                
-
-                fields['runtime'] = form.addTextField(line['runtime'], nil, function()
-                        return startTestLength
-                end, function(value)
-                end)
-                fields['runtime']:enable(false)                
-
-                fields['total'] = form.addTextField(line['total'], nil, function()
-                        return mspSpeedTestStats['total']
-                end, function(value)
-                end)
-                fields['total']:enable(false)
-
-                fields['retries'] = form.addTextField(line['retries'], nil, function()
-                        return mspSpeedTestStats['retries']
-                end, function(value)
-                end)
-                fields['retries']:enable(false)
-
-                fields['timeouts'] = form.addTextField(line['timeouts'], nil, function()
-                        return mspSpeedTestStats['timeouts']
-                end, function(value)
-                end)
-                fields['timeouts']:enable(false)
-
-                fields['checksum'] = form.addTextField(line['checksum'], nil, function()
-                        return mspSpeedTestStats['checksum']
-                end, function(value)
-                end)
-                fields['checksum']:enable(false)
-
-                if (mspSpeedTestStats['success'] == mspSpeedTestStats['total'] - 1) and mspSpeedTestStats['timeouts'] == 0 then
-                        fields['success'] = form.addTextField(line['success'], nil, function()
-                                return mspSpeedTestStats['total']
-                        end, function(value)
-                        end)
-                        fields['success']:enable(false)
-                else
-                        fields['success'] = form.addTextField(line['success'], nil, function()
-                                return mspSpeedTestStats['success']
-                        end, function(value)
-                        end)
-                        fields['success']:enable(false)
-                end
-
-                local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
-                fields['time'] = form.addTextField(line['time'], nil, function()
-                        return avgQueryTime
-                end, function(value)
-                end)
-                fields['time']:enable(false)
-                
-
-        else
-
-                fields['runtime']:value(startTestLength)
-
-                fields['memory']:value(rfsuite.utils.round(system.getMemoryUsage().luaRamAvailable / 1000,2) .. 'kB')
-        
-                fields['total']:value(tostring(mspSpeedTestStats['total']))
-
-                fields['retries']:value(tostring(mspSpeedTestStats['retries']))
-
-                fields['timeouts']:value(tostring(mspSpeedTestStats['timeouts']))
-                
-                fields['checksum']:value(tostring(mspSpeedTestStats['checksum']))
-
-                if (mspSpeedTestStats['success'] == mspSpeedTestStats['total'] - 1) and mspSpeedTestStats['timeouts'] == 0 then
-                        fields['success']:value(tostring(mspSpeedTestStats['success']))
-                else
-                        fields['success']:value(tostring(mspSpeedTestStats['success']))
-                end
-
-                local avgQueryTime
-                local avg = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2)
-                if avg ~= nil then
-                        avgQueryTime = avg .. "s"
-                else
-                        avgQueryTime = "0s"
-                end
-                fields['time']:value(tostring(avgQueryTime))        
-        end
-end
-
-local function getMSPPidBandwidth()
-        local message = {
-                command = 94, -- MSP_STATUS
-                processReply = function(self, buf)
-                        doNextMsp = true                           
-                end,
-                simulatorResponse = {3, 25, 250, 0, 12, 0, 1, 30, 30, 45, 50, 50, 100, 15, 15, 20, 2, 10, 10, 15, 100, 100, 5, 0, 30, 0, 25, 0, 40, 55, 40, 75, 20, 25, 0, 15, 45, 45, 15, 15, 20}
-        }
-        rfsuite.bg.msp.mspQueue:add(message)
-end
-
-local function getMSPServos()
-        local message = {
-                command = 120, -- MSP_STATUS
-                processReply = function(self, buf)
-                        doNextMsp = true
-                end,
-                simulatorResponse = {
-                        4, 180, 5, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 1, 0, 160, 5, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 1, 0, 14, 6, 12, 254, 244, 1, 244, 1, 244, 1, 144, 0, 0, 0, 0, 0,
-                        120, 5, 212, 254, 44, 1, 244, 1, 244, 1, 77, 1, 0, 0, 0, 0
-                }
-        }
-        rfsuite.bg.msp.mspQueue:add(message)
-end
-
-local function getMSPPids()
-        local message = {
-                command = 112, -- MSP_STATUS
-                processReply = function(self, buf)
-                        doNextMsp = true
-                end,
-                simulatorResponse = {70, 0, 225, 0, 90, 0, 120, 0, 100, 0, 200, 0, 70, 0, 120, 0, 100, 0, 125, 0, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 0, 25, 0}
-        }
-        rfsuite.bg.msp.mspQueue:add(message)
-end
-
-local function getMSP()
-        -- three diff msp queries. 
-        if getMSPCount == 0 then
-                getMSPPidBandwidth()
-                getMSPCount = 1
-        elseif getMSPCount == 1 then
-                getMSPServos()
-                getMSPCount = 2
-        else
-                getMSPPids()
-                getMSPCount = 0
-        end
-        
-        local avgQueryTime = rfsuite.utils.round(mspQueryTimeCount / mspSpeedTestStats['total'], 2) .. "s"
-end
-
-local function wakeup()
-
-
-        -- kill if we loose link - but not in sim mode
-        if rfsuite.bg.telemetry.active() == false and startTest == true and system:getVersion().simulation ~= true then
-                if testLoader then
-                        testLoader:close()
-                end
-                startTest = false
-        end
-
-        if formLoaded == true then
-                rfsuite.app.triggers.closeProgressLoader = true
-                formLoaded = false
-        end
-        
-
-        if triggerStart == true then
-                local buttons = {
-                        {
-                                label = "  60S  ",
-                                action = function()
-                                        -- trigger test
-                                        startTestLength = 60
-                                        startTestTime = os.clock()
-                                        testLoaderStepSize = 100 / (startTestLength / 2)
-                                        testLoaderStepSizeValue = 0                                        
-                                        startTest = true
-                                        return true
-                                end
-                        }, 
-                        {
-                                label = "  30S  ",
-                                action = function()
-                                        -- trigger test
-                                        startTestLength = 30
-                                        startTestTime = os.clock()
-                                        testLoaderStepSize = 100 / (startTestLength / 2)
-                                        testLoaderStepSizeValue = 0                                            
-                                        startTest = true
-                                        return true
-                                end
-                        }, 
-                        {
-                                label = "  20S  ",
-                                action = function()
-                                        -- trigger test
-                                        startTestLength = 20
-                                        startTestTime = os.clock()
-                                        testLoaderStepSize = 100 / (startTestLength / 2)
-                                        testLoaderStepSizeValue = 0                                            
-                                        startTest = true
-                                        return true
-                                end
-                        },                         
-                        {
-                                label = "  10S  ",
-                                action = function()
-                                        -- trigger test
-                                        startTestLength = 10
-                                        startTestTime = os.clock()
-                                        testLoaderStepSize = 100 / (startTestLength / 2)
-                                        testLoaderStepSizeValue = 0                                            
-                                        startTest = true
-                                        return true
-                                end
-                        }, 
-                        {
-                                label = "CANCEL",
-                                action = function()
-                                        return true
-                                end
-                        }
-                }
-                form.openDialog({
-                        width = nil,
-                        title = "Start",
-                        message = "Would you like to start the test?  Choose the test run time below.",
-                        buttons = buttons,
-                        wakeup = function()
-                        end,
-                        paint = function()
-                        end,
-                        options = TEXT_LEFT
-                })
-
-                triggerStart = false
-        end
-
-        if startTest == true then
-                local now = os.clock()
-
-                -- launch progress box
-                if testLoaderDisplay == false then
-                        testLoader = form.openProgressDialog("Testing..", "Testing msp performance...")
-                        testLoader:value(0)
-                        testLoader:closeAllowed(false)
-                        testLoaderDisplay = true
-                        testLoaderStepSizeValue = 0
-                        
-                        getMSPCount = 0
-                        mspSpeedTest = true
-                        mspQueryTimeCount = 0
-
-                        mspSpeedTestStats = {}
-                        mspSpeedTestStats['total'] = 0
-                        mspSpeedTestStats['success'] = 0
-                        mspSpeedTestStats['total'] = 0
-                        mspSpeedTestStats['retries'] = 0
-                        mspSpeedTestStats['timeouts'] = 0
-                        mspSpeedTestStats['checksum'] = 0        
-
-                        
-                        doNextMsp = true
-
-                end
-
-                -- update progress box
-                if (now - testLoaderUpdateRate) >= testLoaderUpdateTime then
-                        testLoaderUpdateTime = now
-                        testLoader:value(testLoaderStepSizeValue)
-                        testLoaderStepSizeValue = testLoaderStepSizeValue + testLoaderStepSize
-                end
-
-                -- close progress box
-                if (now - startTestLength) > startTestTime then
-
-                        updateStats()
-                        mspSpeedTest = false
-                        startTest = false
-                        testLoader:close()
-                        testLoaderDisplay = false
-                end
-
-        
-                -- do msp query
-                local now = os.clock()
-                if rfsuite.bg.msp.mspQueue:isProcessed() and ((now - RateLimit) >= Rate)then
-                        RateLimit = now
-                        mspSpeedTestStats['total'] = mspSpeedTestStats['total'] + 1
-                        mspQueryStartTime = os.clock()
-                        
-                        if doNextMsp == true then
-                                doNextMsp = false
-                                getMSP()
-                        end        
-                end
-
-        end
-
-end
-
 function mspSuccess(self)
-        if mspSpeedTest == true then
+        if testLoader then
                 mspQueryTimeCount = mspQueryTimeCount + os.clock() - mspQueryStartTime
                 mspSpeedTestStats['success'] = mspSpeedTestStats['success'] + 1
         end
 end
 
 function mspTimeout(self)
-        if mspSpeedTest == true then mspSpeedTestStats['timeouts'] = mspSpeedTestStats['timeouts'] + 1 end
+        if testLoader then mspSpeedTestStats['timeouts'] = mspSpeedTestStats['timeouts'] + 1 end
 end
 
 function mspRetry(self)
-        if mspSpeedTest == true then mspSpeedTestStats['retries'] = mspSpeedTestStats['retries'] + (self.retryCount - 1) end
+        if testLoader then mspSpeedTestStats['retries'] = mspSpeedTestStats['retries'] + (self.retryCount - 1) end
 end
 
 function mspChecksum(self)
-        if mspSpeedTest == true then mspSpeedTestStats['checksum'] = mspSpeedTestStats['checksum'] + 1 end
+        if testLoader then mspSpeedTestStats['checksum'] = mspSpeedTestStats['checksum'] + 1 end
 end
 
 function close()
-
-        if startTest == true then
+        if testLoader then
                 testLoader:close()
-                startTest = false
+                testLoader = nil
         end        
-        
-        
-        
 end
 
 
 
 
 
-return {title = title, openPage = openPage, mspRetry = mspRetry, mspSuccess = mspSuccess, mspTimeout = mspTimeout, mspChecksum = mspChecksum, wakeup = wakeup, event = event, close = close}
+return {title = title, openPage = openPage, mspRetry = mspRetry, mspSuccess = mspSuccess, mspTimeout = mspTimeout, mspChecksum = mspChecksum, event = event, close = close}
