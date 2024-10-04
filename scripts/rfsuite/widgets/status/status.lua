@@ -4307,6 +4307,7 @@ function status.wakeupUI(widget)
                 mahSOURCE  = nil
                 rssiSOURCE   = nil
                 govSOURCE  = nil
+                lcd.invalidate()
         return
     else
 

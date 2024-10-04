@@ -35,7 +35,8 @@ function bg.active()
                 return true
         end
         
-        if (os.clock() - bg.heartbeat) <= 5 then
+        -- if we have not run within 2 seconds.. notify that bg script is down
+        if (os.clock() - bg.heartbeat) <= 2 then
                 return true
         else
                 return false
