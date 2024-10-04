@@ -400,20 +400,20 @@ function app.wakeup(widget)
         app.guiIsRunning = true
 
         -- keep cpu load down by running UI at reduced interval
-        --local now = os.clock()
-        --if (now - app.wakeupSchedulerUI) >= 0.02 or app.wakeupSchedulerUIInit == true then
-         --       app.wakeupSchedulerUI = now
+        local now = os.clock()
+        if (now - app.wakeupSchedulerUI) >= 0.2 or app.wakeupSchedulerUIInit == true then
+                app.wakeupSchedulerUI = now
                 app.wakeupUI()
-        --        app.wakeupSchedulerUIInit = false
-        --end
+                app.wakeupSchedulerUIInit = false
+        end
 
         -- keep cpu load down by running Form at reduced interval
         --local now = os.clock()
-        --if (now - app.wakeupSchedulerForm) >= 0.025 or app.wakeupSchedulerFormInit == true then
-         --       app.wakeupSchedulerForm = now
+        if (now - app.wakeupSchedulerForm) >= 0.1 or app.wakeupSchedulerFormInit == true then
+                app.wakeupSchedulerForm = now
                 app.wakeupForm()
-        --        app.wakeupSchedulerFormInit = false
-       -- end
+                app.wakeupSchedulerFormInit = false
+        end
 
 
 end
