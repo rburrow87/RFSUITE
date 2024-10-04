@@ -230,6 +230,10 @@ function ui.openMainMenu()
                                                 rfsuite.app.ui.openPage(pidx, pvalue.title, pvalue.script)
                                         end
                                 })
+                                
+                                if pvalue.ethos ~= nil and rfsuite.config.ethosRunningVersion < pvalue.ethos then
+                                        rfsuite.app.formFields[pidx]:enable(false)
+                                end
 
                                 if rfsuite.app.menuLastSelected["mainmenu"] == pidx then rfsuite.app.formFields[pidx]:focus() end
 
