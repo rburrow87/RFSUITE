@@ -188,7 +188,10 @@ function msp.wakeup()
            msp.activeProtocol = "smartPort"
         end
 
-        --if msp.activeProtocol ~= msp.protocol.mspProtocol or rfsuite.rssiSensorChanged == true then
+
+        if rfsuite.bg.wasOn == true then
+                rfsuite.rssiSensorChanged = true
+        end
         
         if rfsuite.rssiSensorChanged == true then
         
@@ -219,15 +222,13 @@ function msp.wakeup()
         local state
 
         if system:getVersion().simulation == true then
-                state = true        
+                state = true                
         elseif rfsuite.rssiSensor then
                 state = rfsuite.bg.telemetry.active()
         else
                 state = false
         end
-     
- 
-        
+             
         if state == true then     
                 msp.mspQueue:processQueue()  
                 
@@ -235,7 +236,7 @@ function msp.wakeup()
                 if msp.onConnectChecksInit == true then
                         msp.onConnectBgChecks()
                 end                             
-        else
+        else              
                 msp.mspQueue:clear()
         end        
 end

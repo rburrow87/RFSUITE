@@ -26,6 +26,8 @@ triggers.closeProgressLoader = false
 triggers.mspBusy = false
 triggers.disableRssiTimeout = false
 triggers.timeIsSet = false
+triggers.invalidConnectionSetup = false
+triggers.wasConnected = false
 
 
 app.compile = compile
@@ -77,10 +79,6 @@ app.radio = {}
 app.sensor = {}
 app.init = nil
 app.guiIsRunning = false
-app.wakeupSchedulerUI = os.clock()
-app.wakeupSchedulerUIInit = false
-app.wakeupSchedulerForm = os.clock()
-app.wakeupSchedulerFormInit = false
 app.menuLastSelected = {}
 app.adjfunctions = nil
 app.profileCheckScheduler = os.clock()
@@ -146,15 +144,15 @@ rfsuite.config.ethosRunningVersion = nil
 function app.getRSSI()
         if system:getVersion().simulation == true or rfsuite.config.skipRssiSensorCheck == true then return 100 end
 
-        if rfsuite.rssiSensor ~= nil then
+        --if rfsuite.rssiSensor ~= nil then
         
                 if rfsuite.bg.telemetry.active() == true then
                         return 100
                 else
                         return 0
                 end
-        end
-        return 0
+        --end
+        --return 0
 end
 
 -- RESET ALL VALUES TO DEFAULTS. FUNCTION IS CALLED WHEN THE CLOSE EVENT RUNS
@@ -170,12 +168,12 @@ function app.resetState()
         app.dialogs.nolinkDisplay = false
         app.dialogs.nolinkValueCounter = 0
         app.triggers.telemetryState = nil
-        app.triggers.badMspVersionDisplay = false
-        app.triggers.badMspVersion = false
         app.dialogs.progressDisplayEsc = false
         ELRS_PAUSE_TELEMETRY = false
         CRSF_PAUSE_TELEMETRY = false
         app.audio = {}
+        app.triggers.wasConnected = false
+        app.triggers.invalidConnectionSetup = false
 
 
 end
@@ -399,21 +397,8 @@ function app.wakeup(widget)
 
         app.guiIsRunning = true
 
-        -- keep cpu load down by running UI at reduced interval
-        local now = os.clock()
-        if (now - app.wakeupSchedulerUI) >= 0.2 or app.wakeupSchedulerUIInit == true then
-                app.wakeupSchedulerUI = now
-                app.wakeupUI()
-                app.wakeupSchedulerUIInit = false
-        end
-
-        -- keep cpu load down by running Form at reduced interval
-        --local now = os.clock()
-        if (now - app.wakeupSchedulerForm) >= 0.1 or app.wakeupSchedulerFormInit == true then
-                app.wakeupSchedulerForm = now
-                app.wakeupForm()
-                app.wakeupSchedulerFormInit = false
-        end
+        app.wakeupUI()
+        app.wakeupForm()
 
 
 end
@@ -584,54 +569,86 @@ function app.wakeupUI()
                            
         end
 
-        -- if we do not have a telemetry link then we need to show a connecting dialog box.
-        -- this runs at all times except when we are displaying the esc search box.  we then
-        -- supress this one and display a different one as timeouts and process is different
-        if app.triggers.telemetryState ~= 1 and app.triggers.disableRssiTimeout == false then
 
+        if app.triggers.telemetryState ~= 1 and app.triggers.disableRssiTimeout == false then
                 if rfsuite.app.dialogs.progressDisplay == true then app.ui.progessDisplayClose() end
                 if rfsuite.app.dialogs.saveDisplay == true then app.ui.progessDisplaySaveClose() end
 
-                if app.dialogs.nolinkDisplay == false then app.ui.progessNolinkDisplay() end
-        end
-
-        -- this is directly related to the loop above.  if the progress box is visible we then wait for a telemetry link
-        -- to be established - and associated msp version checks to finish. all the while incremeting the loader
-        -- until we time out.
-        -- if (app.dialogs.nolinkDisplay == true or app.triggers.telemetryState == 1) and app.dialogs.progressDisplayEsc ~= true then
-        if (app.dialogs.nolinkDisplay == true) and app.triggers.disableRssiTimeout == false then
-                if app.triggers.telemetryState == 1 then
-                        app.dialogs.nolinkValueCounter = app.dialogs.nolinkValueCounter + 20
-                else
-                        app.dialogs.nolinkValueCounter = app.dialogs.nolinkValueCounter + 10
+                if app.dialogs.nolinkDisplay == false and app.dialogs.nolinkDisplayErrorDialog ~= true then
+                         app.ui.progessNolinkDisplay() 
                 end
+        end
+        if (app.dialogs.nolinkDisplay == true) and app.triggers.disableRssiTimeout == false then
+
+                app.dialogs.nolinkValueCounter = app.dialogs.nolinkValueCounter + 10
 
                 if app.dialogs.nolinkValueCounter >= 101 then
-                        if rfsuite.config.apiVersion == nil and app.getRSSI() ~= 0 then
-                                app.ui.progessNolinkDisplayClose()
-                                app.dialogs.nolinkValueCounter = 0
-                                app.dialogs.nolinkDisplay = false
-                        else
-                                app.ui.progessNolinkDisplayClose()
-                                app.dialogs.nolinkValueCounter = 0
-                                app.dialogs.nolinkDisplay = false
 
-                                if system:getVersion().simulation ~= true then
-                                        if app.triggers.telemetryState ~= 1  then
-                                                app.audio.playTimeout = true
-                                                app.triggers.exitAPP = true
-                                        else
-                                                if app.triggers.badMspVersion ~= true then app.audio.playConnected = true end
-                                        end
-                                else
-                                       
-                                        if app.triggers.badMspVersion ~= true then app.audio.playConnected = true end
+                      app.ui.progessNolinkDisplayClose()
+
+                      if app.guiIsRunning == true and app.triggers.invalidConnectionSetup ~= true and app.triggers.wasConnected == false then
+
+                        
+                                local buttons = {
+                                        {
+                                                label = "   OK   ",
+                                                action = function()
+                                                
+                                                        app.triggers.exitAPP = true
+                                                        app.dialogs.nolinkDisplayErrorDialog = false
+                                                        return true
+                                                end
+                                        }
+                                }
+
+                                local message
+                                local apiVersionAsString = tostring(rfsuite.config.apiVersion)
+                                if not rfsuite.bg.active() then
+                                        message = "Please enable the background task."
+                                       app.triggers.invalidConnectionSetup = true
+                                elseif app.getRSSI() == 0 then
+                                        message = "Please check your heli is powered on and telemetry is running."
+                                        app.triggers.invalidConnectionSetup = true
+                                elseif rfsuite.config.apiVersion == nil then
+                                        message = "Unable to determine msp version in use." 
+                                        app.triggers.invalidConnectionSetup = true
+                                elseif not rfsuite.utils.stringInArray(rfsuite.config.supportedMspApiVersion, apiVersionAsString) then
+                                       message = "This version of the Lua scripts \ncan't be used with the selected model (" .. rfsuite.config.apiVersion .. ")."
+                                       app.triggers.invalidConnectionSetup = true
                                 end
- 
+
+                                -- display message and abort if error occured
+                                if app.triggers.invalidConnectionSetup == true and app.triggers.wasConnected == false then
+                                        
+                                        form.openDialog({
+                                                width = nil,
+                                                title = "Error",
+                                                message = message,
+                                                buttons = buttons,
+                                                wakeup = function()
+                                                end,
+                                                paint = function()
+                                                end,
+                                                options = TEXT_LEFT
+                                        })
+                                        
+                                        app.dialogs.nolinkDisplayErrorDialog = true
+                                        
+                                end
+                                
+                                app.dialogs.nolinkValueCounter  = 0
+                                app.dialogs.nolinkDisplay = false 
+
+                        else
+                                app.triggers.wasConnected = true
                         end
+
+
                 end
                 app.ui.progessDisplayNoLinkValue(app.dialogs.nolinkValueCounter)
         end
+
+            
 
         -- a watchdog to enable the close button when saving data if we exheed the save timout
         if rfsuite.config.watchdogParam ~= nil and rfsuite.config.watchdogParam ~= 1 then app.protocol.saveTimeout = rfsuite.config.watchdogParam end
@@ -766,57 +783,7 @@ function app.wakeupUI()
                 app.triggers.triggerReload = false
         end
         
-        -- show an error if msp version is bad
-        if app.uiState == app.uiStatus.mainMenu and app.dialogs.nolinkDisplay == false then
-
-                local apiVersionAsString = tostring(rfsuite.config.apiVersion)
-                if not rfsuite.utils.stringInArray(rfsuite.config.supportedMspApiVersion, apiVersionAsString) then
-                        app.triggers.badMspVersion = true
-                else
-                        app.triggers.badMspVersion = false
-                end
-
-                if app.triggers.badMspVersion == true then
-                        local buttons = {
-                                {
-                                        label = "   OK   ",
-                                        action = function()
-                                                app.triggers.exitAPP = true
-                                                return true
-                                        end
-                                }
-                        }
-                        
-
-                        if app.triggers.badMspVersionDisplay == false then
-                                local message
-                                if not rfsuite.bg.active() then
-                                   message = "Please enable the background task."
-                                elseif app.getRSSI() == 0 then
-                                        message = "Unable to establish a link to the flight controller"
-                                elseif rfsuite.config.apiVersion ~= nil then
-                                        message = "This version of the Lua scripts \ncan't be used with the selected model (" .. rfsuite.config.apiVersion .. ")."
-                                else
-                                        message = "Unable to determine msp version in use."
-                                end
-
-                                app.triggers.badMspVersionDisplay = true
-                                form.openDialog({
-                                        width = nil,
-                                        title = "Error",
-                                        message = message,
-                                        buttons = buttons,
-                                        wakeup = function()
-                                        end,
-                                        paint = function()
-                                        end,
-                                        options = TEXT_LEFT
-                                })
-                        end
-
-                        return
-                end
-        end
+ 
 
         -- a save was triggered - lets display a progress box
         if app.triggers.isSaving then

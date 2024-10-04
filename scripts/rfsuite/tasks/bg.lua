@@ -23,11 +23,19 @@ rfsuite.rssiSensorChanged = true
 local rssiCheckScheduler = os.clock()
 local lastRssiSensorName = nil
 
+bg.wasOn = false
+
 function bg.active()
 
  
         if bg.heartbeat == nil then
                 return false
+        end
+
+        if bg.heartbeat ~= nil and (os.clock() - bg.heartbeat) >= 2 then
+                bg.wasOn = true
+        else
+                bg.wasOn = false
         end
 
         -- if msp is busy.. we are 100% ok
@@ -38,7 +46,7 @@ function bg.active()
         -- if we have not run within 2 seconds.. notify that bg script is down
         if (os.clock() - bg.heartbeat) <= 2 then
                 return true
-        else
+        else 
                 return false
         end
 
