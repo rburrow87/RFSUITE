@@ -29,6 +29,7 @@ triggers.timeIsSet = false
 triggers.invalidConnectionSetup = false
 triggers.wasConnected = false
 triggers.isArmed = false
+triggers.showSaveArmedWarning = false
 
 app.compile = compile
 
@@ -247,13 +248,22 @@ end
 local mspEepromWrite = {
         command = 250, -- MSP_EEPROM_WRITE, fails when armed
         processReply = function(self, buf)
+               app.triggers.closeSave = true
                 if app.Page.reboot then
+                        --app.audio.playSaveArmed = true
                         rebootFc()
                 else
                         invalidatePages()
                 end
-                app.triggers.closeSave = true
+                
         end,
+        errorHandler = function(self)
+                  app.audio.playSaveArmed = true
+                  app.triggers.closeSave = true
+                  
+                  app.triggers.showSaveArmedWarning = true
+                  
+        end,        
         simulatorResponse = {}
 }
 
@@ -266,12 +276,13 @@ function app.settingsSaved()
                 if app.pageState ~= app.pageStatus.eepromWrite then
                         app.pageState = app.pageStatus.eepromWrite
                         rfsuite.bg.msp.mspQueue:add(mspEepromWrite)
+                        --app.audio.playSave = true
                 end
         elseif app.pageState ~= app.pageStatus.eepromWrite then
                 -- If we're not already trying to write to eeprom from a previous save, then we're done.
                 invalidatePages()
                 app.triggers.closeSave = true
-
+                --app.audio.playSave = true
         end
 end
 
@@ -435,7 +446,10 @@ function app.wakeupUI()
         -- the close of the progress bar once the data is loaded.
         -- so if not yet at 100%.. it says.. move there quickly
         if app.triggers.closeProgressLoader == true then
-                if app.dialogs.progressCounter <= 100 then
+                if app.dialogs.progressCounter >= 90 then
+                        app.dialogs.progressCounter = app.dialogs.progressCounter + 0.5
+                        if app.dialogs.progress ~= nil then app.ui.progessDisplayValue(app.dialogs.progressCounter) end                
+                else 
                         app.dialogs.progressCounter = app.dialogs.progressCounter + 10
                         if app.dialogs.progress ~= nil then app.ui.progessDisplayValue(app.dialogs.progressCounter) end
                 end
@@ -455,9 +469,12 @@ function app.wakeupUI()
         if app.triggers.closeSave == true then
                 app.triggers.isSaving = false
 
+
                 if rfsuite.bg.msp.mspQueue:isProcessed() then
                         if (app.dialogs.saveProgressCounter > 40 and app.dialogs.saveProgressCounter <= 80) then
-                                app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 10
+                                app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 5
+                        elseif (app.dialogs.saveProgressCounter > 90 ) then
+                                app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 2
                         else
                                 app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 5
                         end
@@ -471,7 +488,10 @@ function app.wakeupUI()
                         app.dialogs.saveDisplay = false
                         app.dialogs.saveWatchDog = nil
                         if app.dialogs.save ~= nil then
+                        
+
                                 app.ui.progessDisplaySaveClose()
+
 
                                 if rfsuite.config.reloadOnSave == true then app.triggers.triggerReloadNoPrompt = true end
 
@@ -484,7 +504,7 @@ function app.wakeupUI()
         if app.triggers.closeSaveFake == true then
                 app.triggers.isSaving = false
 
-                app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 10
+                app.dialogs.saveProgressCounter = app.dialogs.saveProgressCounter + 5
 
                 if app.dialogs.save ~= nil then app.ui.progessDisplaySaveValue(app.dialogs.saveProgressCounter) end
 
@@ -500,6 +520,7 @@ function app.wakeupUI()
         -- check if armed
         triggers.isArmed = rfsuite.utils.isHeliArmed()
  
+        --[[
         if triggers.isArmed and app.uiState == app.uiStatus.pages then
         
                 if rfsuite.app.formNavigationFields['save'] ~= nil then
@@ -510,6 +531,7 @@ function app.wakeupUI()
                         rfsuite.app.formNavigationFields['save']:enable(true)
                 end              
         end
+        ]]--
 
 
         -- profile switching - trigger a reload when profile changes
@@ -669,7 +691,7 @@ function app.wakeupUI()
         if rfsuite.config.watchdogParam ~= nil and rfsuite.config.watchdogParam ~= 1 then app.protocol.saveTimeout = rfsuite.config.watchdogParam end
         if app.dialogs.saveDisplay == true then
                 if app.dialogs.saveWatchDog ~= nil then
-                        if (os.clock() - app.dialogs.saveWatchDog) > (tonumber(app.protocol.saveTimeout)) or (app.dialogs.saveProgressCounter > 100 and rfsuite.bg.msp.mspQueue:isProcessed()) then
+                        if (os.clock() - app.dialogs.saveWatchDog) > (tonumber(app.protocol.saveTimeout + 5)) or (app.dialogs.saveProgressCounter > 120 and rfsuite.bg.msp.mspQueue:isProcessed()) then
                                 app.audio.playTimeout = true
                                 app.ui.progessDisplaySaveMessage("Error.. we timed out")
                                 app.ui.progessDisplaySaveCloseAllowed(true)
@@ -834,6 +856,18 @@ function app.wakeupUI()
                         app.triggers.isSavingFake = false
                 end
         end
+        
+        -- after saving show brief warning if armed
+        if app.triggers.showSaveArmedWarning == true and app.triggers.closeSave == false then
+                if app.dialogs.progressDisplay == false then
+                        app.dialogs.progressCounter = 0
+                        app.ui.progessDisplay('Save not commited to epprom','Please disarm to save to perminant storage.')
+                end                
+                if app.dialogs.progressCounter >= 100 then
+                        app.triggers.showSaveArmedWarning = false
+                        app.ui.progessDisplayClose()
+                end
+        end
 
         -- check we have telemetry
         app.updateTelemetryState()
@@ -947,6 +981,18 @@ function app.wakeupUI()
                         system.playFile(rfsuite.config.suiteDir .. "app/sounds/loading.wav")
                         app.audio.playLoading = false
                 end
+
+                if app.audio.playSave == true then
+                        system.playFile(rfsuite.config.suiteDir .. "app/sounds/save.wav")
+                        app.audio.playSave = false
+                end
+
+                if app.audio.playSaveArmed == true then
+                        system.playFile(rfsuite.config.suiteDir .. "app/sounds/savearmed.wav")
+                        app.audio.playSaveArmed = false
+                end
+
+
 
         else
                 app.audio.playLoading = false
@@ -1069,10 +1115,10 @@ function app.event(widget, category, value, x, y)
                 if value == KEY_ENTER_LONG then
                         if app.dialogs.progressDisplay == true then app.ui.progessDisplayClose() end
                         if app.dialogs.saveDisplay == true then app.ui.progessDisplaySaveClose() end
-                        if triggers.isArmed == false then
+                        --if triggers.isArmed == false then
                                 app.triggers.triggerSave = true
                                 system.killEvents(KEY_ENTER_BREAK)
-                        end
+                        --end
                         return true
                 end
 

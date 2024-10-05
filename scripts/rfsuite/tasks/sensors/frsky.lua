@@ -16,6 +16,8 @@ createSensorList[0x5471] = {name  = "PID Profile", unit = UNIT_RAW }
 createSensorList[0x5472] = {name  = "Rate Profile", unit = UNIT_RAW }
 createSensorList[0x5440] = {name  = "Throttle %", unit = UNIT_RAW }
 createSensorList[0x5250] = {name  = "Consumption", unit=UNIT_MILLIAMPERE_HOUR }
+createSensorList[0x5462] = {name  = "Arm Status", unit=UNIT_RAW }
+
 
 -- drop
 local dropSensorList = {}
