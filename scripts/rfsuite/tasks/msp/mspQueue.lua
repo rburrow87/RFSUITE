@@ -23,13 +23,9 @@ end
 
 function MspQueueController:processQueue()
         if self:isProcessed() then
-                ELRS_PAUSE_TELEMETRY = false
-                CRSF_PAUSE_TELEMETRY = false
                 rfsuite.app.triggers.mspBusy = false
                 return
         end
-        ELRS_PAUSE_TELEMETRY = true
-        CRSF_PAUSE_TELEMETRY = true
         rfsuite.app.triggers.mspBusy = true
 
         if not self.currentMessage then

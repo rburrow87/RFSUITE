@@ -4,6 +4,51 @@ local arg = {...}
 local config = arg[1]
 local compile = arg[2]
 
+function utils.isHeliArmed()
+
+        local govmode
+
+        local governorMap = {}
+        governorMap[0] = "OFF"
+        governorMap[1] = "IDLE"
+        governorMap[2] = "SPOOLUP"
+        governorMap[3] = "RECOVERY"
+        governorMap[4] = "ACTIVE"
+        governorMap[5] = "THR-OFF"
+        governorMap[6] = "LOST-HS"
+        governorMap[7] = "AUTOROT"
+        governorMap[8] = "BAILOUT"
+        governorMap[100] = "DISABLED"
+        governorMap[101] = "DISARMED"
+
+        govSOURCE = rfsuite.bg.telemetry.getSensorSource("governor")
+ 
+        if rfsuite.bg.telemetry.getSensorProtocol() == 'lcrsf' then
+                if govSOURCE ~= nil then govmode = govSOURCE:stringValue() end        
+        else  
+                 if govSOURCE ~= nil then
+                    govId = govSOURCE:value()
+                    if governorMap[govId] == nil then
+                        govmode = "UNKNOWN"
+                    else
+                        govmode = governorMap[govId]
+                    end
+                else
+                    govmode = ""
+                end
+        end
+         
+         
+        if govmode ~= "DISARMED" then 
+                return true
+        else
+                return false
+        end
+        
+
+end
+
+
 -- this is used in multiple places - just gives easy way
 -- to grab activeProfile or activeRateProfile in tmp var
 -- you MUST set it to nil after you get it!

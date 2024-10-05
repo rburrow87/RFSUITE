@@ -130,8 +130,10 @@ local function armingDisableFlagsToString(flags)
                         if i == 23 then t = t .. "Acc Calibration" end
                         if i == 24 then t = t .. "Motor Protocol" end
                         if i == 25 then t = t .. "Arm Switch" end
+                   
                 end
         end
+
         if t == "" then t = "OK" end
         return t
 end

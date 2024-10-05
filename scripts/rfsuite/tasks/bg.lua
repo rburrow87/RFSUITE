@@ -62,7 +62,7 @@ function bg.wakeup()
        -- this should be before msp.hecks
         -- doing this is heavy - lets run it every few seconds only
         local now = os.clock()
-        if (now - rssiCheckScheduler) >= 2 then
+        if rssiCheckScheduler ~= nil and (now - rssiCheckScheduler) >= 2 then
                         local currentRssiSensor = rfsuite.utils.getRssiSensor()
                         
                         if currentRssiSensor ~= nil then

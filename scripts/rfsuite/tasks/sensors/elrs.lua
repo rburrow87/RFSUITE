@@ -372,50 +372,58 @@ elrs.telemetryFrameId = 0
 elrs.telemetryFrameSkip = 0
 elrs.telemetryFrameCount = 0
 
+
+
 function elrs.crossfirePop()
 
-        -- quick exit if pause enabled
-        if ELRS_PAUSE_TELEMETRY == true or ELRS_PAUSE_TELEMETRY == true then
-                return
-        end
+        if (CRSF_PAUSE_TELEMETRY == true or rfsuite.app.triggers.mspBusy == true) then
+                return false
+        else
 
-        local command, data = crsf.popFrame()
-        if command and data then
+                local command, data = crsf.popFrame()
+                if command and data then
 
-                if command == CRSF_FRAME_CUSTOM_TELEM then
-                        local fid, sid, val
-                        local ptr = 3
-                        fid, ptr = decU8(data, ptr)
-                        local delta = (fid - elrs.telemetryFrameId) & 0xFF
-                        if delta > 1 then elrs.telemetryFrameSkip = elrs.telemetryFrameSkip + 1 end
-                        elrs.telemetryFrameId = fid
-                        elrs.telemetryFrameCount = elrs.telemetryFrameCount + 1
-                        while ptr < #data do
-                                sid, ptr = decU16(data, ptr)
-                                local sensor = elrs.RFSensors[sid]
-                                if sensor then
-                                        val, ptr = sensor.dec(data, ptr)
-                                        if val then setTelemetryValue(sid, 0, 0, val, sensor.unit, sensor.prec, sensor.name, sensor.min, sensor.max) end
-                                else
-                                        break
+                        if command == CRSF_FRAME_CUSTOM_TELEM then
+                                local fid, sid, val
+                                local ptr = 3
+                                fid, ptr = decU8(data, ptr)
+                                local delta = (fid - elrs.telemetryFrameId) & 0xFF
+                                if delta > 1 then elrs.telemetryFrameSkip = elrs.telemetryFrameSkip + 1 end
+                                elrs.telemetryFrameId = fid
+                                elrs.telemetryFrameCount = elrs.telemetryFrameCount + 1
+                                while ptr < #data  do
+                                                                      
+                                        sid, ptr = decU16(data, ptr)
+                                        local sensor = elrs.RFSensors[sid]
+                                        if sensor then
+                                                val, ptr = sensor.dec(data, ptr)
+                                                if val then setTelemetryValue(sid, 0, 0, val, sensor.unit, sensor.prec, sensor.name, sensor.min, sensor.max) end
+                                        else
+                                                break
+                                        end
                                 end
+                                setTelemetryValue(0xEE01, 0, 0, elrs.telemetryFrameCount, UNIT_RAW, 0, "*Cnt", 0, 2147483647)
+                                setTelemetryValue(0xEE02, 0, 0, elrs.telemetryFrameSkip, UNIT_RAW, 0, "*Skp", 0, 2147483647)
+                                -- setTelemetryValue(0xEE03, 0, 0, elrs.telemetryFrameId, UNIT_RAW, 0, "*Frm", 0, 255)
                         end
-                        setTelemetryValue(0xEE01, 0, 0, elrs.telemetryFrameCount, UNIT_RAW, 0, "*Cnt", 0, 2147483647)
-                        setTelemetryValue(0xEE02, 0, 0, elrs.telemetryFrameSkip, UNIT_RAW, 0, "*Skp", 0, 2147483647)
-                        -- setTelemetryValue(0xEE03, 0, 0, elrs.telemetryFrameId, UNIT_RAW, 0, "*Frm", 0, 255)
+                  
+                        return true
                 end
-                return true
-        end
+                 
 
-        return false
+                return false
+       end         
 end
 
 function elrs.wakeup()
 
 
         if rfsuite.bg.telemetry.active() and rfsuite.rssiSensor  then
-                local pauseTelemetry = ELRS_PAUSE_TELEMETRY or CRSF_PAUSE_TELEMETRY
-                while not pauseTelemetry and elrs.crossfirePop() do end
+                while elrs.crossfirePop() do 
+                        if (CRSF_PAUSE_TELEMETRY == true or rfsuite.app.triggers.mspBusy == true) then
+                                break
+                        end              
+                end
         end
 end
 

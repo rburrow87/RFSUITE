@@ -28,7 +28,7 @@ triggers.disableRssiTimeout = false
 triggers.timeIsSet = false
 triggers.invalidConnectionSetup = false
 triggers.wasConnected = false
-
+triggers.isArmed = false
 
 app.compile = compile
 
@@ -496,6 +496,21 @@ function app.wakeupUI()
                         app.ui.progessDisplaySaveClose()
                 end
         end
+
+        -- check if armed
+        triggers.isArmed = rfsuite.utils.isHeliArmed()
+ 
+        if triggers.isArmed and app.uiState == app.uiStatus.pages then
+        
+                if rfsuite.app.formNavigationFields['save'] ~= nil then
+                        rfsuite.app.formNavigationFields['save']:enable(false)
+                end        
+        else
+                if rfsuite.app.formNavigationFields['save'] ~= nil then
+                        rfsuite.app.formNavigationFields['save']:enable(true)
+                end              
+        end
+
 
         -- profile switching - trigger a reload when profile changes
         if rfsuite.config.profileswitchParam == 0 and app.Page ~= nil 
@@ -1054,8 +1069,10 @@ function app.event(widget, category, value, x, y)
                 if value == KEY_ENTER_LONG then
                         if app.dialogs.progressDisplay == true then app.ui.progessDisplayClose() end
                         if app.dialogs.saveDisplay == true then app.ui.progessDisplaySaveClose() end
-                        app.triggers.triggerSave = true
-                        system.killEvents(KEY_ENTER_BREAK)
+                        if triggers.isArmed == false then
+                                app.triggers.triggerSave = true
+                                system.killEvents(KEY_ENTER_BREAK)
+                        end
                         return true
                 end
 
