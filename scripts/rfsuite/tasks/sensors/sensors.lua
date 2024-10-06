@@ -16,11 +16,11 @@ function sensors.wakeup()
                 return
         end
         
-        if rfsuite.bg.msp.protocol.mspProtocol == "crsf"  then
+        if rfsuite.bg.msp.protocol.mspProtocol == "crsf" and config.disableInternalElrsTelemetry ~= true then
                 sensors.elrs.wakeup()
         end
 
-        if rfsuite.bg.msp.protocol.mspProtocol == "smartPort"  then
+        if rfsuite.bg.msp.protocol.mspProtocol == "smartPort"  and config.disableInternalSportTelemetry ~= true then
                 sensors.frsky.wakeup()
         end        
 

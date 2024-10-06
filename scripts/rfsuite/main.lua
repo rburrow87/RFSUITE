@@ -16,6 +16,8 @@ config.supportedMspApiVersion = {"12.06", "12.07"}                  -- supported
 config.skipRssiSensorCheck = false                                  -- skip checking for a valid signal when loading connecting to the fbl
 config.icon = lcd.loadMask(config.suiteDir .. "app/gfx/icon.png")   -- icon
 config.watchdogParam = 10                                           -- watchdog timeout for progress boxes
+config.disableInternalElrsTelemetry = false                         -- disable the integrated elrs telemetry processing
+config.disableInternalSportTelemetry = false                        -- disable the integrated smart port telemetry processing
 
 -- tasks
 config.bgTaskName = config.toolName .. " [Background Tasks]"                     -- background task name for msp services etc
