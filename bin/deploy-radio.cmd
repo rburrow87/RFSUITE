@@ -9,7 +9,6 @@ REM "Remove destination folder"
 RMDIR "%dstfolder%\%tgt%" /S /Q
 
 
-
 REM "copy files to folder"
 mkdir "%dstfolder%\%tgt%"
 xcopy "%srcfolder%\scripts\%tgt%" "%dstfolder%\%tgt%"  /h /i /c /k /e /r /y

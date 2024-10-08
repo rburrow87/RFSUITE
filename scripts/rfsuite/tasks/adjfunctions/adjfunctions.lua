@@ -108,6 +108,13 @@ adjfunc.adjJustUp = false
 
 function adjfunc.wakeup()
 
+
+        -- do not run the remaining code
+        if config.adjFunctionAlerts ~= true then
+                return
+        end
+
+
         if rfsuite.rssiSensor == nil then
                 return
         end

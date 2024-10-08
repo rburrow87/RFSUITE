@@ -258,11 +258,12 @@ local mspEepromWrite = {
                 
         end,
         errorHandler = function(self)
-                  app.audio.playSaveArmed = true
-                  app.triggers.closeSave = true
-                  
-                  app.triggers.showSaveArmedWarning = true
-                  
+                  app.triggers.closeSave = true      
+                  app.audio.playSaveArmed = true                  
+                  if config.saveWhenArmedWarning == true then
+                        app.triggers.showSaveArmedWarning = true
+                       
+                  end      
         end,        
         simulatorResponse = {}
 }
@@ -516,23 +517,7 @@ function app.wakeupUI()
                         app.ui.progessDisplaySaveClose()
                 end
         end
-
-        -- check if armed
-        triggers.isArmed = rfsuite.utils.isHeliArmed()
- 
-        --[[
-        if triggers.isArmed and app.uiState == app.uiStatus.pages then
         
-                if rfsuite.app.formNavigationFields['save'] ~= nil then
-                        rfsuite.app.formNavigationFields['save']:enable(false)
-                end        
-        else
-                if rfsuite.app.formNavigationFields['save'] ~= nil then
-                        rfsuite.app.formNavigationFields['save']:enable(true)
-                end              
-        end
-        ]]--
-
 
         -- profile switching - trigger a reload when profile changes
         if rfsuite.config.profileswitchParam == 0 and app.Page ~= nil 
@@ -857,15 +842,17 @@ function app.wakeupUI()
                 end
         end
         
-        -- after saving show brief warning if armed
-        if app.triggers.showSaveArmedWarning == true and app.triggers.closeSave == false then
-                if app.dialogs.progressDisplay == false then
-                        app.dialogs.progressCounter = 0
-                        app.ui.progessDisplay('Save not commited to epprom','Please disarm to save to perminant storage.')
-                end                
-                if app.dialogs.progressCounter >= 100 then
-                        app.triggers.showSaveArmedWarning = false
-                        app.ui.progessDisplayClose()
+        -- after saving show brief warning if armed (we only show this if feature it turned on as default option is to not allow save when armed for safety.
+        if config.saveWhenArmedWarning == true then
+                if app.triggers.showSaveArmedWarning == true and app.triggers.closeSave == false then
+                        if app.dialogs.progressDisplay == false then
+                                app.dialogs.progressCounter = 0
+                                app.ui.progessDisplay('Save not commited to epprom','Please disarm to save to ensure integretty when saving.')
+                        end                
+                        if app.dialogs.progressCounter >= 100 then
+                                app.triggers.showSaveArmedWarning = false
+                                app.ui.progessDisplayClose()
+                        end
                 end
         end
 

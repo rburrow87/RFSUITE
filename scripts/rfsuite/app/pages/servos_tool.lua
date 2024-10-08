@@ -223,6 +223,7 @@ local function wakeup(self)
                         rfsuite.app.formNavigationFields['save']:enable(false)
                         
                 else
+                
                         rfsuite.app.audio.playServoOverideDisable = true
                         rfsuite.app.ui.progessDisplay("Servo overide...", "Disabling servo overide.")
                         rfsuite.app.Page.servoCenterFocusAllOff(self)
@@ -540,6 +541,8 @@ local function openPage(idx, title, script, extra1)
         getServoConfigurations(getServoConfigurationsEnd)
 
 end
+
+
 
 local function event(widget, category, value, x, y)
 
