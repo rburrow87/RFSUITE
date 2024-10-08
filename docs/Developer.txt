@@ -40,7 +40,7 @@ return {
       onToolMenu = onToolMenu,                  -- An additional menu button with associated function (no default - tool is custom)
      navButtons = {},                           -- a defined list of nav buttons to show {menu=true,save=true,reload=true,help=true}
      openPage = openPage                        -- alternative function to render page. excected format of:  openPage(idx, title, script)
-                                                   it will need to end with  rf2ethos.triggers.closeProgressLoader = true or the
+                                                   it will need to end with  rfsuite.triggers.closeProgressLoader = true or the
                                                    progress dialog will not close.  or use postLoad to trigger this.
      mspRetry = mspRetry,                       -- A hook into msp queue - runs on every msp retry
      mspSuccess = mspSuccess,                   -- A hook into msp success - runs on every msp sucess
@@ -102,7 +102,7 @@ The following provides an example summary of the parameters you can use.
 rf2thos.triggers.triggerSave = true             -- trigger and msp save
 rf2thos.triggers.triggerReload = true           -- triger an msp reload
 rf2thos.triggers.triggerReloadNoPrompt = true   -- triger an msp reload with no confirm
-rf2ethos.triggers.disableRssiTimeout = true     -- disable the rssi timeout
+rfsuite.triggers.disableRssiTimeout = true     -- disable the rssi timeout
 
 
 
